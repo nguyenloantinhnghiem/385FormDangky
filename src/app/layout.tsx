@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Đăng Ký Nhiều Mục — Hệ thống đăng ký trực tuyến",
-  description: "Hệ thống đăng ký trực tuyến nhiều mục — nhanh chóng, dễ dàng, chính xác. Đăng ký hương linh, tâm linh và các mục khác.",
+  title: "Đăng Ký Cầu Siêu — Hệ thống đăng ký trực tuyến",
+  description: "Hệ thống đăng ký cầu siêu trực tuyến — nhanh chóng, dễ dàng, chính xác. Đăng ký hương linh, tâm linh bài 8 và các mục khác.",
 };
 
 export default function RootLayout({
