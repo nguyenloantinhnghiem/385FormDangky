@@ -5,36 +5,42 @@ import type { CategoryKey } from '@/types';
 // Category-specific Zod schemas
 // ============================================================
 
-// HL mới mất (trong 49 ngày)
+// HL mới mất (trong 49 ngày) — supports MULTIPLE deceased
 export const hlTrong49Schema = z.object({
-    hoTenNguoiMat: z.string().min(1, 'Vui lòng nhập họ tên người mất'),
-    ngayMat: z.string().default(''),
-    tho: z.string().default(''),
-    anTangTai: z.string().default(''),
+    nguoiMat: z.array(z.object({
+        hoTen: z.string().min(1, 'Vui lòng nhập họ tên'),
+        ngayMat: z.string().default(''),
+        tho: z.string().default(''),
+        anTangTai: z.string().default(''),
+    })).min(1, 'Cần ít nhất 1 hương linh'),
 });
 
-// HL ngoài 49 ngày (rõ tên)
+// HL ngoài 49 ngày (rõ tên) — supports MULTIPLE deceased
 export const hlNgoai49Schema = z.object({
-    hoTenNguoiMat: z.string().min(1, 'Vui lòng nhập họ tên người mất'),
-    ngayMat: z.string().default(''),
-    tho: z.string().default(''),
-    anTangTai: z.string().default(''),
+    nguoiMat: z.array(z.object({
+        hoTen: z.string().min(1, 'Vui lòng nhập họ tên'),
+        ngayMat: z.string().default(''),
+        tho: z.string().default(''),
+        anTangTai: z.string().default(''),
+    })).min(1, 'Cần ít nhất 1 hương linh'),
 });
 
-// Tâm linh bài số 8
+// Tâm linh bài số 8 — one-time fields + MULTIPLE HL trên nghiệp entries
 export const tamLinhBai8Schema = z.object({
     cungDuongChuThien: z.string().default('khong'),
     hlGiaTien: z.boolean().default(false),
     hlTrenDat: z.boolean().default(false),
-    hlTrenNghiep: z.string().default(''),
-    hlCanTroChuaBenh: z.string().default(''),
+    danhSachNghiep: z.array(z.object({
+        moTa: z.string().min(1, 'Vui lòng nhập mô tả'),
+    })).default([]),
     ghiChu: z.string().default(''),
 });
 
-// Tâm linh khác (không tu bài số 8)
+// Tâm linh khác (không tu bài số 8) — MULTIPLE entries
 export const tamLinhKhacSchema = z.object({
-    noiDungDangKy: z.string().min(1, 'Vui lòng nhập nội dung đăng ký'),
-    ghiChu: z.string().default(''),
+    danhSach: z.array(z.object({
+        moTa: z.string().min(1, 'Vui lòng nhập nội dung'),
+    })).min(1, 'Cần ít nhất 1 mục'),
 });
 
 // Map category key → schema
