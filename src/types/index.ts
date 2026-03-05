@@ -14,9 +14,7 @@ export type ScreenName =
     | 'landing'
     | 'ceremony_select'
     | 'applicant'
-    | 'category_select'
-    | 'category_form'
-    | 'post_save'
+    | 'registration_form'
     | 'summary'
     | 'success';
 
