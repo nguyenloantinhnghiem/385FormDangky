@@ -30,6 +30,7 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
             tinChu: '',
             phone: '',
             daoTrang: '',
+            to: '',
             notes: '',
         },
         mode: 'onChange',
@@ -93,6 +94,20 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
                                 placeholder="Tên đạo tràng hoặc nhóm (nếu có)"
                                 {...register('daoTrang')}
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="to">Thuộc tổ nào?</Label>
+                            <select
+                                id="to"
+                                {...register('to')}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                                <option value="">-- Chọn tổ --</option>
+                                {Array.from({ length: 15 }, (_, i) => (
+                                    <option key={i + 1} value={`Tổ ${i + 1}`}>Tổ {i + 1}</option>
+                                ))}
+                            </select>
                         </div>
 
                         <div className="space-y-2">

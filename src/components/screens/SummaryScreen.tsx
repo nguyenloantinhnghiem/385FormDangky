@@ -73,6 +73,7 @@ export default function SummaryScreen({
                 <CardContent className="px-3 pb-3 pt-1">
                     <p className="text-sm font-medium">{applicant.tinChu} • {applicant.phone}</p>
                     {applicant.daoTrang && <p className="text-xs text-stone-500">{applicant.daoTrang}</p>}
+                    {applicant.to && <p className="text-xs text-stone-500">{applicant.to}</p>}
                 </CardContent>
             </Card>
 

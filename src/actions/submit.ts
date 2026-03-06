@@ -25,6 +25,7 @@ interface SubmitPayload {
         tinChu: string;
         phone: string;
         daoTrang?: string;
+        to?: string;
         notes?: string;
     };
     formData: FormData;
@@ -54,6 +55,9 @@ function buildFormattedText(applicant: SubmitPayload['applicant'], formData: For
     lines.push(`Tín chủ/Phật tử: ${applicant.tinChu}`);
     if (applicant.daoTrang) {
         lines.push(`Đạo tràng/Nhóm: ${applicant.daoTrang}`);
+    }
+    if (applicant.to) {
+        lines.push(`Thuộc: ${applicant.to}`);
     }
     lines.push(`SĐT: ${applicant.phone}`);
     lines.push('- Mục hương linh:');
@@ -235,6 +239,7 @@ export async function submitRegistration(payload: SubmitPayload): Promise<Submit
             ceremony_label: ceremony?.label || ceremonyType,
             applicant_name: applicant.tinChu, applicant_phone: applicant.phone,
             applicant_dao_trang: applicant.daoTrang || '',
+            applicant_to: applicant.to || '',
             total_items: String(itemRows.length),
             categories_text: [...categorySet].join(', '),
             applicant_payload_json: JSON.stringify(applicant),

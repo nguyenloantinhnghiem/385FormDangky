@@ -23,6 +23,7 @@ export interface Applicant {
     tinChu: string;        // Tín chủ / Phật tử / Pháp danh
     phone: string;
     daoTrang: string;      // Đạo tràng / Nhóm
+    to: string;            // Thuộc tổ nào (Tổ 1, Tổ 2, ...)
     notes: string;
 }
 
@@ -98,6 +99,7 @@ export interface SubmissionRow {
     applicant_name: string;
     applicant_phone: string;
     applicant_dao_trang: string;
+    applicant_to: string;
     total_items: string;
     categories_text: string;
     applicant_payload_json: string;

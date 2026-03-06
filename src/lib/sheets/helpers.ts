@@ -67,7 +67,7 @@ export async function appendSummaryRow(row: string[]) {
 const SUBMISSION_COLUMNS: (keyof SubmissionRow)[] = [
     'submission_id', 'submission_code', 'created_at', 'updated_at', 'status',
     'ceremony_type', 'ceremony_label',
-    'applicant_name', 'applicant_phone', 'applicant_dao_trang',
+    'applicant_name', 'applicant_phone', 'applicant_dao_trang', 'applicant_to',
     'total_items', 'categories_text', 'applicant_payload_json', 'source', 'notes',
 ];
 
