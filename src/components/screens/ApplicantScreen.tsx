@@ -88,15 +88,6 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="daoTrang">Đạo tràng / Nhóm</Label>
-                            <Input
-                                id="daoTrang"
-                                placeholder="Tên đạo tràng hoặc nhóm (nếu có)"
-                                {...register('daoTrang')}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
                             <Label htmlFor="to">Thuộc tổ nào?</Label>
                             <select
                                 id="to"
