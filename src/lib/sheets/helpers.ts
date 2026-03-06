@@ -10,6 +10,7 @@ const SHEET = {
     SUBMISSIONS: 'submissions',
     SUBMISSION_ITEMS: 'submission_items',
     AUDIT_LOGS: 'audit_logs',
+    SUMMARY: 'Tổng hợp đăng ký',
 } as const;
 
 // ============================================================
@@ -20,7 +21,7 @@ async function appendRows(sheetName: string, rows: string[][]) {
     const { sheets, spreadsheetId } = await getSheetsClient();
     await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: `${sheetName}!A1`,
+        range: `'${sheetName}'!A1`,
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         requestBody: { values: rows },
@@ -31,13 +32,36 @@ async function readRows(sheetName: string): Promise<string[][]> {
     const { sheets, spreadsheetId } = await getSheetsClient();
     const res = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: `${sheetName}!A:Z`,
+        range: `'${sheetName}'!A:Z`,
     });
     return (res.data.values as string[][]) || [];
 }
 
 // ============================================================
-// Submission helpers
+// Summary sheet — formatted output matching sample
+// ============================================================
+
+export async function getNextSTT(): Promise<number> {
+    try {
+        const rows = await readRows(SHEET.SUMMARY);
+        // Find the last row with a number in column A
+        let maxSTT = 0;
+        for (const row of rows) {
+            const num = parseInt(row[0], 10);
+            if (!isNaN(num) && num > maxSTT) maxSTT = num;
+        }
+        return maxSTT + 1;
+    } catch {
+        return 1;
+    }
+}
+
+export async function appendSummaryRow(row: string[]) {
+    await appendRows(SHEET.SUMMARY, [row]);
+}
+
+// ============================================================
+// Submission helpers (structured data)
 // ============================================================
 
 const SUBMISSION_COLUMNS: (keyof SubmissionRow)[] = [
@@ -80,9 +104,7 @@ export async function listSubmissions(): Promise<Record<string, string>[]> {
     const headers = rows[0];
     return rows.slice(1).map((row) => {
         const obj: Record<string, string> = {};
-        headers.forEach((h, i) => {
-            obj[h] = row[i] || '';
-        });
+        headers.forEach((h, i) => { obj[h] = row[i] || ''; });
         return obj;
     });
 }
@@ -93,9 +115,7 @@ export async function listSubmissionItems(): Promise<Record<string, string>[]> {
     const headers = rows[0];
     return rows.slice(1).map((row) => {
         const obj: Record<string, string> = {};
-        headers.forEach((h, i) => {
-            obj[h] = row[i] || '';
-        });
+        headers.forEach((h, i) => { obj[h] = row[i] || ''; });
         return obj;
     });
 }
@@ -106,12 +126,8 @@ export async function getSubmissionById(submissionId: string) {
         (s) => s.submission_id === submissionId || s.submission_code === submissionId
     );
     if (!submission) return null;
-
     const allItems = await listSubmissionItems();
-    const items = allItems.filter(
-        (item) => item.submission_id === submission.submission_id
-    );
-
+    const items = allItems.filter((item) => item.submission_id === submission.submission_id);
     return { submission, items };
 }
 
