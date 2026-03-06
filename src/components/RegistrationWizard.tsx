@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { CEREMONY_MAP } from '@/config/categories';
 import { submitRegistration } from '@/actions/submit';
+import { submitDynamicRegistration } from '@/actions/submit-dynamic';
 import { saveDraft, loadDraft, clearDraft, hasDraft } from '@/lib/utils/draft';
 import type { Applicant, CeremonyType, ScreenName } from '@/types';
 import type { AllInOneFormData } from '@/components/screens/RegistrationFormScreen';
@@ -13,9 +14,100 @@ import CeremonySelectScreen from '@/components/screens/CeremonySelectScreen';
 import ApplicantScreen from '@/components/screens/ApplicantScreen';
 import RegistrationFormScreen from '@/components/screens/RegistrationFormScreen';
 import LookupScreen, { type PastSubmission } from '@/components/screens/LookupScreen';
+import DynamicFormScreen from '@/components/screens/DynamicFormScreen';
 import SummaryScreen from '@/components/screens/SummaryScreen';
 import SuccessScreen from '@/components/screens/SuccessScreen';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, CheckCircle, AlertCircle, Edit2, ArrowLeft, Send } from 'lucide-react';
+
+// Inline Dynamic Summary component
+function DynamicSummary({ registrationLabel, applicant, formData, isSubmitting, submitError, onEdit, onSubmit, onBack }: {
+    registrationLabel: string;
+    applicant: Applicant;
+    formData: Record<string, unknown>;
+    isSubmitting: boolean;
+    submitError: string | null;
+    onEdit: () => void;
+    onSubmit: () => void;
+    onBack: () => void;
+}) {
+    return (
+        <div className="animate-slide-in">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                    <h2 className="text-xl font-bold text-stone-800">Xem lại đăng ký</h2>
+                    <p className="text-sm text-stone-500">Kiểm tra thông tin trước khi gửi</p>
+                </div>
+            </div>
+
+            <Card className="mb-3">
+                <CardHeader className="pb-1 px-3 pt-3">
+                    <CardTitle className="text-xs text-stone-400 uppercase">Loại đăng ký</CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 pt-1">
+                    <p className="text-sm font-medium text-amber-700">{registrationLabel}</p>
+                </CardContent>
+            </Card>
+
+            <Card className="mb-3">
+                <CardHeader className="pb-1 px-3 pt-3">
+                    <CardTitle className="text-xs text-stone-400 uppercase">Người đăng ký</CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 pt-1">
+                    <p className="text-sm font-medium">{applicant.tinChu} • {applicant.phone}</p>
+                    {applicant.to && <p className="text-xs text-stone-500">{applicant.to}</p>}
+                </CardContent>
+            </Card>
+
+            <Card className="mb-3">
+                <CardHeader className="pb-1 px-3 pt-3 flex flex-row items-center justify-between">
+                    <CardTitle className="text-xs text-stone-400 uppercase">Chi tiết đăng ký</CardTitle>
+                    <Button variant="ghost" size="sm" onClick={onEdit} className="h-6 text-xs gap-1">
+                        <Edit2 className="w-3 h-3" /> Sửa
+                    </Button>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 pt-1 space-y-1">
+                    {Object.entries(formData).map(([key, value]) => {
+                        if (value === undefined || value === null || value === '' || value === false) return null;
+                        return (
+                            <div key={key} className="flex text-sm">
+                                <span className="text-stone-500 mr-2">{key}:</span>
+                                <span className="text-stone-800 font-medium">
+                                    {value === true ? 'Có' : String(value)}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </CardContent>
+            </Card>
+
+            {submitError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600 flex gap-2 items-start mb-4">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    {submitError}
+                </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+                <Button variant="outline" onClick={onBack} className="flex-1 gap-2">
+                    <ArrowLeft className="w-4 h-4" /> Quay lại
+                </Button>
+                <Button onClick={onSubmit} disabled={isSubmitting} className="flex-1 gap-2">
+                    {isSubmitting ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Đang gửi...</>
+                    ) : (
+                        <><Send className="w-4 h-4" /> Gửi đăng ký</>
+                    )}
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 export default function RegistrationWizard() {
     const [screen, setScreen] = useState<ScreenName>('landing');
@@ -23,6 +115,7 @@ export default function RegistrationWizard() {
     const [registrationType, setRegistrationType] = useState<RegistrationType | null>(null);
     const [applicant, setApplicant] = useState<Applicant | null>(null);
     const [formData, setFormData] = useState<AllInOneFormData | null>(null);
+    const [dynamicFormData, setDynamicFormData] = useState<Record<string, unknown> | null>(null);
     const [submissionCode, setSubmissionCode] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -102,6 +195,15 @@ export default function RegistrationWizard() {
         goTo('summary');
     };
 
+    // Dynamic form next
+    const handleDynamicFormNext = (data: Record<string, unknown>) => {
+        setDynamicFormData(data);
+        goTo('summary');
+    };
+
+    // Is this a dynamic (non-cau_sieu) flow?
+    const isDynamic = registrationType && registrationType.formType !== 'cau_sieu';
+
     // Handle re-registration from lookup
     const handleSelectPast = (sub: PastSubmission) => {
         // Set ceremony type
@@ -166,17 +268,31 @@ export default function RegistrationWizard() {
     };
 
     const handleSubmit = async () => {
-        if (!applicant || !ceremonyType || !formData) return;
+        if (!applicant) return;
 
         setIsSubmitting(true);
         setSubmitError(null);
 
         try {
-            const result = await submitRegistration({
-                ceremonyType,
-                applicant,
-                formData,
-            });
+            let result;
+            if (isDynamic && dynamicFormData) {
+                result = await submitDynamicRegistration({
+                    registrationType: registrationType!.formType,
+                    registrationLabel: registrationType!.label,
+                    applicant,
+                    formData: dynamicFormData,
+                });
+            } else if (ceremonyType && formData) {
+                result = await submitRegistration({
+                    ceremonyType,
+                    applicant,
+                    formData,
+                });
+            } else {
+                setSubmitError('Thiếu dữ liệu. Vui lòng điền lại form.');
+                setIsSubmitting(false);
+                return;
+            }
 
             if (result.success && result.code) {
                 setSubmissionCode(result.code);
@@ -197,6 +313,7 @@ export default function RegistrationWizard() {
         setRegistrationType(null);
         setApplicant(null);
         setFormData(null);
+        setDynamicFormData(null);
         setSubmissionCode('');
         clearDraft();
         goTo('landing');
@@ -249,17 +366,26 @@ export default function RegistrationWizard() {
                     <ApplicantScreen
                         defaultValues={applicant}
                         onNext={handleApplicantNext}
-                        onBack={() => goTo('ceremony_select')}
+                        onBack={() => goTo(isDynamic ? 'landing' : 'ceremony_select')}
                     />
                 )}
-                {screen === 'registration_form' && (
+                {screen === 'registration_form' && !isDynamic && (
                     <RegistrationFormScreen
                         defaultValues={formData || undefined}
                         onNext={handleFormNext}
                         onBack={() => goTo('applicant')}
                     />
                 )}
-                {screen === 'summary' && applicant && ceremonyType && formData && (
+                {screen === 'registration_form' && isDynamic && registrationType && (
+                    <DynamicFormScreen
+                        formType={registrationType.formType}
+                        formLabel={registrationType.label}
+                        defaultValues={dynamicFormData || undefined}
+                        onNext={handleDynamicFormNext}
+                        onBack={() => goTo('applicant')}
+                    />
+                )}
+                {screen === 'summary' && applicant && !isDynamic && ceremonyType && formData && (
                     <SummaryScreen
                         ceremonyType={ceremonyType}
                         applicant={applicant}
@@ -268,6 +394,18 @@ export default function RegistrationWizard() {
                         submitError={submitError}
                         onEditApplicant={() => goTo('applicant')}
                         onEditForm={() => goTo('registration_form')}
+                        onSubmit={handleSubmit}
+                        onBack={() => goTo('registration_form')}
+                    />
+                )}
+                {screen === 'summary' && applicant && isDynamic && dynamicFormData && (
+                    <DynamicSummary
+                        registrationLabel={registrationType!.label}
+                        applicant={applicant}
+                        formData={dynamicFormData}
+                        isSubmitting={isSubmitting}
+                        submitError={submitError}
+                        onEdit={() => goTo('registration_form')}
                         onSubmit={handleSubmit}
                         onBack={() => goTo('registration_form')}
                     />
