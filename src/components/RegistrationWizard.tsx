@@ -6,6 +6,7 @@ import { submitRegistration } from '@/actions/submit';
 import { saveDraft, loadDraft, clearDraft, hasDraft } from '@/lib/utils/draft';
 import type { Applicant, CeremonyType, ScreenName } from '@/types';
 import type { AllInOneFormData } from '@/components/screens/RegistrationFormScreen';
+import type { RegistrationType } from '@/actions/settings';
 
 import LandingScreen from '@/components/screens/LandingScreen';
 import CeremonySelectScreen from '@/components/screens/CeremonySelectScreen';
@@ -19,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 export default function RegistrationWizard() {
     const [screen, setScreen] = useState<ScreenName>('landing');
     const [ceremonyType, setCeremonyType] = useState<CeremonyType | null>(null);
+    const [registrationType, setRegistrationType] = useState<RegistrationType | null>(null);
     const [applicant, setApplicant] = useState<Applicant | null>(null);
     const [formData, setFormData] = useState<AllInOneFormData | null>(null);
     const [submissionCode, setSubmissionCode] = useState('');
@@ -72,6 +74,18 @@ export default function RegistrationWizard() {
     }, [draftLoaded]);
 
     const goTo = (s: ScreenName) => setScreen(s);
+
+    // Handle start from landing — receives registration type
+    const handleStart = (regType?: RegistrationType) => {
+        if (regType) setRegistrationType(regType);
+        if (regType?.formType === 'cau_sieu') {
+            // Cầu Siêu flow → ceremony select
+            goTo('ceremony_select');
+        } else {
+            // Other types → skip ceremony select (use reg type label as ceremony)
+            goTo('applicant');
+        }
+    };
 
     const handleCeremonySelect = (type: CeremonyType) => {
         setCeremonyType(type);
@@ -180,6 +194,7 @@ export default function RegistrationWizard() {
 
     const handleNewRegistration = () => {
         setCeremonyType(null);
+        setRegistrationType(null);
         setApplicant(null);
         setFormData(null);
         setSubmissionCode('');
@@ -192,7 +207,9 @@ export default function RegistrationWizard() {
             {screen !== 'landing' && screen !== 'success' && (
                 <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-stone-200 px-4 py-3">
                     <div className="max-w-lg mx-auto flex items-center justify-between">
-                        <h1 className="text-sm font-bold text-amber-600">Đăng Ký Cầu Siêu</h1>
+                        <h1 className="text-sm font-bold text-amber-600">
+                            {registrationType?.label || 'Đăng Ký Cầu Siêu'}
+                        </h1>
                         {ceremonyType && (
                             <Badge variant="outline" className="text-xs">
                                 {CEREMONY_MAP.get(ceremonyType)?.shortLabel}
@@ -211,7 +228,7 @@ export default function RegistrationWizard() {
 
                 {screen === 'landing' && (
                     <LandingScreen
-                        onStart={() => goTo('ceremony_select')}
+                        onStart={handleStart}
                         onLookup={() => goTo('lookup')}
                     />
                 )}

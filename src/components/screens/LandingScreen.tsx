@@ -3,22 +3,27 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Heart, RotateCcw, Play } from 'lucide-react';
-import { getGuideVideoUrl } from '@/actions/settings';
+import { ArrowRight, Heart, RotateCcw, Play, Lock, Calendar } from 'lucide-react';
+import { getLandingConfig, getRegistrationTypes, type LandingConfig, type RegistrationType } from '@/actions/settings';
 
 interface LandingScreenProps {
-    onStart: () => void;
+    onStart: (regType?: RegistrationType) => void;
     onLookup: () => void;
 }
 
 export default function LandingScreen({ onStart, onLookup }: LandingScreenProps) {
-    const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [config, setConfig] = useState<LandingConfig | null>(null);
+    const [regTypes, setRegTypes] = useState<RegistrationType[]>([]);
     const [showVideo, setShowVideo] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getGuideVideoUrl().then((url) => {
-            if (url) setVideoUrl(url);
-        });
+        Promise.all([getLandingConfig(), getRegistrationTypes()])
+            .then(([cfg, types]) => {
+                setConfig(cfg);
+                setRegTypes(types);
+            })
+            .finally(() => setLoading(false));
     }, []);
 
     // Convert YouTube URL to embed URL
@@ -29,6 +34,23 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
         return url;
     };
 
+    if (loading) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-3xl mx-auto mb-4 animate-pulse">🙏</div>
+                    <p className="text-stone-400 text-sm">Đang tải...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const title = config?.title || 'Đăng Ký Cầu Siêu';
+    const subtitle = config?.subtitle || '';
+    const notes = config?.notes || [];
+    const isClosed = config ? !config.registrationOpen : false;
+    const openTypes = regTypes.filter((t) => t.open);
+
     return (
         <div className="min-h-[80vh] flex flex-col items-center justify-center text-center animate-fade-in">
             <div className="relative mb-6">
@@ -38,18 +60,41 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
                 <div className="absolute -top-1 -right-1 text-xl animate-bounce-in">✨</div>
             </div>
 
-            <h1 className="text-2xl font-bold text-stone-800 mb-3">
-                Đăng Ký Cầu Siêu
-            </h1>
-            <p className="text-stone-500 mb-2 max-w-xs">
-                Hệ thống đăng ký cầu siêu trực tuyến — nhanh chóng, dễ dàng, chính xác.
-            </p>
+            <h1 className="text-2xl font-bold text-stone-800 mb-3">{title}</h1>
+            {subtitle && (
+                <p className="text-stone-500 mb-2 max-w-xs">{subtitle}</p>
+            )}
             <p className="text-stone-400 text-sm mb-6 max-w-xs">
                 Bạn có thể đăng ký <strong className="text-amber-600">nhiều mục</strong> cùng lúc, xem lại và chỉnh sửa trước khi gửi.
             </p>
 
+            {/* Warning banner */}
+            {config?.formWarning && (
+                <div className="w-full max-w-sm mb-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 font-medium">
+                    ⚠️ {config.formWarning}
+                </div>
+            )}
+
+            {/* Registration CLOSED */}
+            {isClosed && (
+                <div className="w-full max-w-sm mb-6">
+                    <Card className="border-orange-200 bg-orange-50">
+                        <CardContent className="p-5 text-center">
+                            <Lock className="w-8 h-8 text-orange-500 mx-auto mb-3" />
+                            <p className="text-stone-700 font-medium mb-2">{config?.closeMessage}</p>
+                            {config?.nextDate && (
+                                <div className="flex items-center justify-center gap-2 text-sm text-orange-600">
+                                    <Calendar className="w-4 h-4" />
+                                    Đợt tiếp theo: <strong>{config.nextDate}</strong>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
             {/* Video hướng dẫn */}
-            {videoUrl && (
+            {config?.videoUrl && (
                 <div className="w-full max-w-sm mb-6">
                     {!showVideo ? (
                         <Button
@@ -64,7 +109,7 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
                         <div className="rounded-xl overflow-hidden shadow-lg border border-stone-200">
                             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                                 <iframe
-                                    src={getEmbedUrl(videoUrl)}
+                                    src={getEmbedUrl(config.videoUrl)}
                                     className="absolute inset-0 w-full h-full"
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
@@ -82,36 +127,72 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
                 </div>
             )}
 
-            {/* Action buttons */}
-            <div className="flex flex-col gap-3 w-full max-w-sm">
-                <Button onClick={onStart} className="px-8 py-6 text-lg gap-2 shadow-lg">
-                    Bắt đầu đăng ký <ArrowRight className="w-5 h-5" />
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={onLookup}
-                    className="px-8 py-5 gap-2 border-stone-300 text-stone-600"
-                >
-                    <RotateCcw className="w-4 h-4" />
-                    Đăng ký lại (tra cứu SĐT)
-                </Button>
-            </div>
+            {/* Registration type buttons */}
+            {!isClosed && (
+                <div className="flex flex-col gap-3 w-full max-w-sm">
+                    {openTypes.length <= 1 ? (
+                        // Only one type — single button like before
+                        <Button
+                            onClick={() => onStart(openTypes[0])}
+                            className="px-8 py-6 text-lg gap-2 shadow-lg"
+                        >
+                            Bắt đầu đăng ký <ArrowRight className="w-5 h-5" />
+                        </Button>
+                    ) : (
+                        // Multiple types — show cards
+                        <>
+                            <p className="text-sm font-medium text-stone-600 mb-1">Chọn loại đăng ký:</p>
+                            {openTypes.map((rt) => (
+                                <Card
+                                    key={rt.key}
+                                    className="cursor-pointer hover:border-amber-300 hover:shadow-md transition-all"
+                                    onClick={() => onStart(rt)}
+                                >
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-xl flex-shrink-0">
+                                            {rt.icon}
+                                        </div>
+                                        <div className="text-left flex-1">
+                                            <p className="font-medium text-stone-800">{rt.label}</p>
+                                            {rt.description && (
+                                                <p className="text-xs text-stone-400">{rt.description}</p>
+                                            )}
+                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-stone-300" />
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </>
+                    )}
+                    <Button
+                        variant="outline"
+                        onClick={onLookup}
+                        className="px-8 py-5 gap-2 border-stone-300 text-stone-600"
+                    >
+                        <RotateCcw className="w-4 h-4" />
+                        Đăng ký lại (tra cứu SĐT)
+                    </Button>
+                </div>
+            )}
 
-            <Card className="mt-8 max-w-sm">
-                <CardContent className="p-4">
-                    <div className="flex items-start gap-3 text-left">
-                        <Heart className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                        <div className="text-xs text-stone-500">
-                            <p className="font-medium text-stone-700 mb-1">Lưu ý:</p>
-                            <ul className="space-y-1">
-                                <li>• Nếu đã có <strong>Pháp danh</strong> thì ghi Pháp danh</li>
-                                <li>• Ngày mất ghi theo <strong>ngày âm lịch</strong></li>
-                                <li>• Thông tin được bảo mật và chỉ dùng cho mục đích đăng ký</li>
-                            </ul>
+            {/* Notes card */}
+            {notes.length > 0 && (
+                <Card className="mt-8 max-w-sm">
+                    <CardContent className="p-4">
+                        <div className="flex items-start gap-3 text-left">
+                            <Heart className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                            <div className="text-xs text-stone-500">
+                                <p className="font-medium text-stone-700 mb-1">Lưu ý:</p>
+                                <ul className="space-y-1">
+                                    {notes.map((note, i) => (
+                                        <li key={i}>{note}</li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }
