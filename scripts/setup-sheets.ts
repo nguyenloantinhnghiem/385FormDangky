@@ -63,6 +63,7 @@ async function main() {
         'STT',
         'TÍN CHỦ/PHẬT TỬ',
         'SỐ ĐIỆN THOẠI',
+        'TỔ',
         'NỘI DUNG ĐĂNG KÝ',
     ]);
 

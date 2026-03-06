@@ -56,9 +56,6 @@ function buildFormattedText(applicant: SubmitPayload['applicant'], formData: For
     if (applicant.daoTrang) {
         lines.push(`Đạo tràng/Nhóm: ${applicant.daoTrang}`);
     }
-    if (applicant.to) {
-        lines.push(`Thuộc: ${applicant.to}`);
-    }
     lines.push(`SĐT: ${applicant.phone}`);
     lines.push('- Mục hương linh:');
 
@@ -228,6 +225,7 @@ export async function submitRegistration(payload: SubmitPayload): Promise<Submit
             String(stt),
             applicant.tinChu,
             applicant.phone,
+            applicant.to || '',
             formattedText,
         ]);
 
