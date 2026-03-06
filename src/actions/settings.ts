@@ -92,6 +92,7 @@ export interface RegistrationType {
     open: boolean;
     order: number;
     formType: string; // 'cau_sieu' | 'custom' | etc.
+    parent: string;   // key of parent type, empty = root
 }
 
 export async function getRegistrationTypes(): Promise<RegistrationType[]> {
@@ -99,7 +100,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "'registration_types'!A:G",
+            range: "'registration_types'!A:H",
         });
         const rows = (res.data.values as string[][]) || [];
         if (rows.length < 2) {
@@ -112,6 +113,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
                 open: true,
                 order: 1,
                 formType: 'cau_sieu',
+                parent: '',
             }];
         }
 
@@ -124,6 +126,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
                 open: (row[4] || 'TRUE').toUpperCase() === 'TRUE',
                 order: parseInt(row[5] || '99', 10),
                 formType: row[6] || 'custom',
+                parent: row[7] || '',
             }))
             .filter((r) => r.key && r.label)
             .sort((a, b) => a.order - b.order);
@@ -136,6 +139,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
             open: true,
             order: 1,
             formType: 'cau_sieu',
+            parent: '',
         }];
     }
 }

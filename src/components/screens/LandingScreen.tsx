@@ -13,15 +13,16 @@ interface LandingScreenProps {
 
 export default function LandingScreen({ onStart, onLookup }: LandingScreenProps) {
     const [config, setConfig] = useState<LandingConfig | null>(null);
-    const [regTypes, setRegTypes] = useState<RegistrationType[]>([]);
+    const [allTypes, setAllTypes] = useState<RegistrationType[]>([]);
     const [showVideo, setShowVideo] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [selectedParent, setSelectedParent] = useState<RegistrationType | null>(null);
 
     useEffect(() => {
         Promise.all([getLandingConfig(), getRegistrationTypes()])
             .then(([cfg, types]) => {
                 setConfig(cfg);
-                setRegTypes(types);
+                setAllTypes(types);
             })
             .finally(() => setLoading(false));
     }, []);
@@ -49,7 +50,23 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
     const subtitle = config?.subtitle || '';
     const notes = config?.notes || [];
     const isClosed = config ? !config.registrationOpen : false;
-    const openTypes = regTypes.filter((t) => t.open);
+
+    // Root types = those without a parent
+    const rootTypes = allTypes.filter((t) => !t.parent && t.open);
+    // Children of selected parent
+    const childTypes = selectedParent
+        ? allTypes.filter((t) => t.parent === selectedParent.key && t.open)
+        : [];
+
+    const handleTypeClick = (rt: RegistrationType) => {
+        // Check if this type has children
+        const children = allTypes.filter((t) => t.parent === rt.key && t.open);
+        if (children.length > 0) {
+            setSelectedParent(rt);
+        } else {
+            onStart(rt);
+        }
+    };
 
     return (
         <div className="min-h-[80vh] flex flex-col items-center justify-center text-center animate-fade-in">
@@ -130,23 +147,58 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
             {/* Registration type buttons */}
             {!isClosed && (
                 <div className="flex flex-col gap-3 w-full max-w-sm">
-                    {openTypes.length <= 1 ? (
-                        // Only one type — single button like before
+                    {/* Sub-type selection (when parent is selected) */}
+                    {selectedParent ? (
+                        <>
+                            <div className="flex items-center gap-2 mb-1">
+                                <button
+                                    onClick={() => setSelectedParent(null)}
+                                    className="text-sm text-amber-600 hover:underline flex items-center gap-1"
+                                >
+                                    ← Quay lại
+                                </button>
+                                <span className="text-sm text-stone-400">|</span>
+                                <span className="text-sm font-medium text-stone-700">{selectedParent.label}</span>
+                            </div>
+                            <p className="text-sm text-stone-500 mb-1">Chọn trường hợp:</p>
+                            {childTypes.map((rt) => (
+                                <Card
+                                    key={rt.key}
+                                    className="cursor-pointer hover:border-amber-300 hover:shadow-md transition-all"
+                                    onClick={() => onStart(rt)}
+                                >
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-xl flex-shrink-0">
+                                            {rt.icon}
+                                        </div>
+                                        <div className="text-left flex-1">
+                                            <p className="font-medium text-stone-800">{rt.label}</p>
+                                            {rt.description && (
+                                                <p className="text-xs text-stone-400">{rt.description}</p>
+                                            )}
+                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-stone-300" />
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </>
+                    ) : rootTypes.length <= 1 ? (
+                        /* Only one root type — single button */
                         <Button
-                            onClick={() => onStart(openTypes[0])}
+                            onClick={() => handleTypeClick(rootTypes[0])}
                             className="px-8 py-6 text-lg gap-2 shadow-lg"
                         >
                             Bắt đầu đăng ký <ArrowRight className="w-5 h-5" />
                         </Button>
                     ) : (
-                        // Multiple types — show cards
+                        /* Multiple root types — show cards */
                         <>
                             <p className="text-sm font-medium text-stone-600 mb-1">Chọn loại đăng ký:</p>
-                            {openTypes.map((rt) => (
+                            {rootTypes.map((rt) => (
                                 <Card
                                     key={rt.key}
                                     className="cursor-pointer hover:border-amber-300 hover:shadow-md transition-all"
-                                    onClick={() => onStart(rt)}
+                                    onClick={() => handleTypeClick(rt)}
                                 >
                                     <CardContent className="p-4 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-xl flex-shrink-0">
