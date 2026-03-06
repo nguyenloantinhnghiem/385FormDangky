@@ -223,6 +223,7 @@ export async function submitRegistration(payload: SubmitPayload): Promise<Submit
         const stt = await getNextSTT();
         await appendSummaryRow([
             String(stt),
+            ceremony?.label || ceremonyType,
             applicant.tinChu,
             applicant.phone,
             applicant.to || '',

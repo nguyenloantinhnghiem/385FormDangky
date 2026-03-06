@@ -23,7 +23,7 @@ async function main() {
         range: `'Tổng hợp đăng ký'!A1`,
         valueInputOption: 'USER_ENTERED',
         requestBody: {
-            values: [['STT', 'TÍN CHỦ/PHẬT TỬ', 'SỐ ĐIỆN THOẠI', 'TỔ', 'NỘI DUNG ĐĂNG KÝ']],
+            values: [['STT', 'LOẠI CẦU SIÊU', 'TÍN CHỦ/PHẬT TỬ', 'SỐ ĐIỆN THOẠI', 'TỔ', 'NỘI DUNG ĐĂNG KÝ']],
         },
     });
     console.log('  ✅ Đã cập nhật header "Tổng hợp đăng ký" (thêm cột TỔ)');

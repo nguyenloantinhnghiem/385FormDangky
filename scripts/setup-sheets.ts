@@ -61,6 +61,7 @@ async function main() {
     await createSheetIfNotExists('Tổng hợp đăng ký');
     await setHeaders('Tổng hợp đăng ký', [
         'STT',
+        'LOẠI CẦU SIÊU',
         'TÍN CHỦ/PHẬT TỬ',
         'SỐ ĐIỆN THOẠI',
         'TỔ',
