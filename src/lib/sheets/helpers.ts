@@ -139,3 +139,95 @@ export async function readSettings(): Promise<Record<string, string>> {
     });
     return settings;
 }
+
+// ============================================================
+// Per-form-type sheet — auto-create and append
+// ============================================================
+
+/**
+ * Writes a row to a sheet named after the form type label.
+ * Auto-creates the sheet + headers if it doesn't exist.
+ */
+export async function appendToFormSheet(
+    sheetLabel: string,
+    applicant: { tinChu: string; phone: string; to?: string; notes?: string },
+    formData: Record<string, unknown>,
+    fieldLabels: Record<string, string>,
+) {
+    const { sheets, spreadsheetId } = await getSheetsClient();
+    const tabName = `KQ_${sheetLabel}`.slice(0, 50); // Sheet name max ~100 chars
+
+    // Check if tab exists
+    let tabExists = false;
+    try {
+        const meta = await sheets.spreadsheets.get({ spreadsheetId });
+        tabExists = (meta.data.sheets || []).some(
+            (s) => s.properties?.title === tabName
+        );
+    } catch { /* ignore */ }
+
+    // Build headers from field labels
+    const fixedHeaders = ['STT', 'Ngày gửi', 'Tín chủ', 'SĐT', 'Tổ', 'Ghi chú'];
+    const fieldKeys = Object.keys(formData).filter(
+        (k) => formData[k] !== undefined && formData[k] !== null
+    );
+    const fieldHeaders = fieldKeys.map((k) => fieldLabels[k] || k);
+    const allHeaders = [...fixedHeaders, ...fieldHeaders];
+
+    if (!tabExists) {
+        // Create tab
+        try {
+            await sheets.spreadsheets.batchUpdate({
+                spreadsheetId,
+                requestBody: {
+                    requests: [{ addSheet: { properties: { title: tabName } } }],
+                },
+            });
+        } catch { /* tab may already exist in race condition */ }
+
+        // Write headers
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `'${tabName}'!A1`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [allHeaders] },
+        });
+    }
+
+    // Count existing rows for STT
+    let stt = 1;
+    try {
+        const existing = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: `'${tabName}'!A:A`,
+        });
+        stt = Math.max((existing.data.values?.length || 1) - 1, 0) + 1;
+    } catch { /* starts at 1 */ }
+
+    // Build row values
+    const now = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const fieldValues = fieldKeys.map((k) => {
+        const v = formData[k];
+        if (v === true) return 'Có';
+        if (v === false) return 'Không';
+        return String(v || '');
+    });
+
+    const row = [
+        String(stt),
+        now,
+        applicant.tinChu,
+        "'" + applicant.phone,
+        applicant.to || '',
+        applicant.notes || '',
+        ...fieldValues,
+    ];
+
+    await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: `'${tabName}'!A1`,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [row] },
+    });
+}

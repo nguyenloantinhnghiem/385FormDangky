@@ -2,7 +2,8 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { generateSubmissionCode } from '@/lib/utils/submission-code';
-import { appendSubmission, appendSubmissionItems, appendAuditLog, appendSummaryRow, getNextSTT } from '@/lib/sheets/helpers';
+import { appendSubmission, appendSubmissionItems, appendAuditLog, appendSummaryRow, getNextSTT, appendToFormSheet } from '@/lib/sheets/helpers';
+import { getFormFields } from '@/actions/form-fields';
 
 interface DynamicSubmitPayload {
     registrationType: string;
@@ -110,9 +111,24 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
             detail: `Dynamic form "${registrationLabel}" submitted via webapp`,
         });
 
+        // Write to per-form-type sheet (KQ_{label})
+        try {
+            const sections = await getFormFields(registrationType);
+            const fieldLabels: Record<string, string> = {};
+            for (const sec of sections) {
+                for (const f of sec.fields) {
+                    fieldLabels[f.fieldKey] = f.fieldLabel;
+                }
+            }
+            await appendToFormSheet(registrationLabel, applicant, formData, fieldLabels);
+        } catch (e) {
+            console.error('appendToFormSheet error (non-fatal):', e);
+        }
+
         return { success: true, code: submissionCode };
     } catch (err) {
         console.error('Dynamic submit error:', err);
         return { success: false, error: 'Đã có lỗi khi gửi đăng ký. Vui lòng thử lại sau.' };
     }
 }
+
