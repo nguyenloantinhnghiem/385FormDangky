@@ -13,7 +13,7 @@ interface DynamicFormScreenProps {
     formType: string;
     formLabel: string;
     defaultValues?: Record<string, unknown>;
-    onNext: (data: Record<string, unknown>) => void;
+    onNext: (data: Record<string, unknown>, fieldLabels: Record<string, string>) => void;
     onBack: () => void;
 }
 
@@ -72,7 +72,14 @@ export default function DynamicFormScreen({ formType, formLabel, defaultValues, 
 
     const handleSubmit = () => {
         if (validate()) {
-            onNext(formData);
+            // Build fieldKey → fieldLabel mapping
+            const labels: Record<string, string> = {};
+            for (const sec of sections) {
+                for (const f of sec.fields) {
+                    labels[f.fieldKey] = f.fieldLabel;
+                }
+            }
+            onNext(formData, labels);
         }
     };
 

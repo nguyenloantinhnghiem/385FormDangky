@@ -23,10 +23,11 @@ import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle, AlertCircle, Edit2, ArrowLeft, Send } from 'lucide-react';
 
 // Inline Dynamic Summary component
-function DynamicSummary({ registrationLabel, applicant, formData, isSubmitting, submitError, onEdit, onSubmit, onBack }: {
+function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, isSubmitting, submitError, onEdit, onSubmit, onBack }: {
     registrationLabel: string;
     applicant: Applicant;
     formData: Record<string, unknown>;
+    fieldLabels: Record<string, string>;
     isSubmitting: boolean;
     submitError: string | null;
     onEdit: () => void;
@@ -74,11 +75,13 @@ function DynamicSummary({ registrationLabel, applicant, formData, isSubmitting, 
                 <CardContent className="px-3 pb-3 pt-1 space-y-1">
                     {Object.entries(formData).map(([key, value]) => {
                         if (value === undefined || value === null || value === '' || value === false) return null;
+                        if (Array.isArray(value) && value.length === 0) return null;
+                        const label = fieldLabels[key] || key;
                         return (
                             <div key={key} className="flex text-sm">
-                                <span className="text-stone-500 mr-2">{key}:</span>
+                                <span className="text-stone-500 mr-2">{label}:</span>
                                 <span className="text-stone-800 font-medium">
-                                    {value === true ? 'Có' : String(value)}
+                                    {value === true ? 'Có' : Array.isArray(value) ? (value as string[]).join(', ') : String(value)}
                                 </span>
                             </div>
                         );
@@ -120,6 +123,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     const [applicant, setApplicant] = useState<Applicant | null>(null);
     const [formData, setFormData] = useState<AllInOneFormData | null>(null);
     const [dynamicFormData, setDynamicFormData] = useState<Record<string, unknown> | null>(null);
+    const [dynamicFieldLabels, setDynamicFieldLabels] = useState<Record<string, string>>({});
     const [submissionCode, setSubmissionCode] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -207,8 +211,9 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     };
 
     // Dynamic form next
-    const handleDynamicFormNext = (data: Record<string, unknown>) => {
+    const handleDynamicFormNext = (data: Record<string, unknown>, labels: Record<string, string>) => {
         setDynamicFormData(data);
+        setDynamicFieldLabels(labels);
         goTo('summary');
     };
 
@@ -325,6 +330,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
         setApplicant(null);
         setFormData(null);
         setDynamicFormData(null);
+        setDynamicFieldLabels({});
         setSubmissionCode('');
         clearDraft();
         goTo('landing');
@@ -414,6 +420,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                         registrationLabel={registrationType!.label}
                         applicant={applicant}
                         formData={dynamicFormData}
+                        fieldLabels={dynamicFieldLabels}
                         isSubmitting={isSubmitting}
                         submitError={submitError}
                         onEdit={() => goTo('registration_form')}
