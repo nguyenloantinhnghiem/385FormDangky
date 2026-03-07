@@ -109,10 +109,14 @@ function DynamicSummary({ registrationLabel, applicant, formData, isSubmitting, 
     );
 }
 
-export default function RegistrationWizard() {
-    const [screen, setScreen] = useState<ScreenName>('landing');
+interface WizardProps {
+    initialRegType?: RegistrationType;
+}
+
+export default function RegistrationWizard({ initialRegType }: WizardProps) {
+    const [screen, setScreen] = useState<ScreenName>(initialRegType ? 'applicant' : 'landing');
     const [ceremonyType, setCeremonyType] = useState<CeremonyType | null>(null);
-    const [registrationType, setRegistrationType] = useState<RegistrationType | null>(null);
+    const [registrationType, setRegistrationType] = useState<RegistrationType | null>(initialRegType || null);
     const [applicant, setApplicant] = useState<Applicant | null>(null);
     const [formData, setFormData] = useState<AllInOneFormData | null>(null);
     const [dynamicFormData, setDynamicFormData] = useState<Record<string, unknown> | null>(null);
@@ -120,6 +124,13 @@ export default function RegistrationWizard() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [draftLoaded, setDraftLoaded] = useState(false);
+
+    // If initialRegType is cau_sieu, go to ceremony_select instead of applicant
+    useEffect(() => {
+        if (initialRegType?.formType === 'cau_sieu' && screen === 'applicant' && !applicant) {
+            setScreen('ceremony_select');
+        }
+    }, [initialRegType, screen, applicant]);
 
     // Load draft
     useEffect(() => {
