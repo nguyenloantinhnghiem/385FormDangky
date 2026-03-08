@@ -24,11 +24,18 @@ interface LookupResult {
     }[];
 }
 
+// Helper: get value from row object trying multiple possible header names
+function get(row: Record<string, string>, ...keys: string[]): string {
+    for (const k of keys) {
+        if (row[k]) return row[k];
+    }
+    return '';
+}
+
 export async function lookupByPhone(phone: string): Promise<LookupResult> {
     try {
         const normalizePhone = (p: string) => {
             let clean = p.replace(/\s+/g, '').replace(/^'/, '').replace(/^\+84/, '0');
-            // If 9 digits (missing leading 0), add it back
             if (/^\d{9}$/.test(clean)) clean = '0' + clean;
             return clean;
         };
@@ -38,33 +45,33 @@ export async function lookupByPhone(phone: string): Promise<LookupResult> {
         const allItems = await listSubmissionItems();
 
         const matched = allSubmissions.filter((s) => {
-            const sPhone = normalizePhone(s['Số điện thoại'] || s['applicant_phone'] || '');
+            const sPhone = normalizePhone(get(s, 'SĐT', 'Số điện thoại', 'applicant_phone'));
             return sPhone === searchPhone;
         });
 
         const submissions = matched.map((s) => {
-            const subId = s['Mã đăng ký (ID)'] || s['submission_id'] || '';
+            const subId = get(s, 'Mã đăng ký', 'Mã đăng ký (ID)', 'submission_id');
             const items = allItems
-                .filter((item) => (item['Mã đăng ký (ID)'] || item['submission_id']) === subId)
+                .filter((item) => get(item, 'Mã đăng ký', 'Mã đăng ký (ID)', 'submission_id') === subId)
                 .map((item) => ({
-                    categoryKey: item['Loại mục (key)'] || item['category_key'] || '',
-                    categoryLabel: item['Tên loại mục'] || item['category_label'] || '',
-                    displayName: item['Tên hiển thị'] || item['display_name'] || '',
-                    summaryText: item['Tóm tắt'] || item['summary_text'] || '',
-                    payloadJson: item['Dữ liệu chi tiết (JSON)'] || item['item_payload_json'] || '',
+                    categoryKey: get(item, 'Mã danh mục', 'Loại mục (key)', 'category_key'),
+                    categoryLabel: get(item, 'Tên danh mục', 'Tên loại mục', 'category_label'),
+                    displayName: get(item, 'Tên hiển thị', 'display_name'),
+                    summaryText: get(item, 'Tóm tắt', 'summary_text'),
+                    payloadJson: get(item, 'Dữ liệu JSON', 'Dữ liệu chi tiết (JSON)', 'item_payload_json'),
                 }));
 
             return {
                 submissionId: subId,
-                submissionCode: s['Mã tra cứu'] || s['submission_code'] || '',
-                createdAt: s['Ngày tạo'] || s['created_at'] || '',
-                ceremonyType: s['Loại cầu siêu'] || s['ceremony_type'] || '',
-                ceremonyLabel: s['Tên loại cầu siêu'] || s['ceremony_label'] || '',
-                applicantName: s['Tín chủ/Phật tử'] || s['applicant_name'] || '',
-                applicantPhone: s['Số điện thoại'] || s['applicant_phone'] || '',
-                applicantTo: s['Thuộc tổ'] || s['applicant_to'] || '',
-                totalItems: s['Tổng số mục'] || s['total_items'] || '0',
-                categoriesText: s['Danh sách loại mục'] || s['categories_text'] || '',
+                submissionCode: get(s, 'Mã tra cứu', 'submission_code'),
+                createdAt: get(s, 'Ngày tạo', 'created_at'),
+                ceremonyType: get(s, 'Loại lễ', 'Loại cầu siêu', 'ceremony_type'),
+                ceremonyLabel: get(s, 'Tên loại lễ', 'Tên loại cầu siêu', 'ceremony_label'),
+                applicantName: get(s, 'Tên tín chủ', 'Tín chủ/Phật tử', 'applicant_name'),
+                applicantPhone: get(s, 'SĐT', 'Số điện thoại', 'applicant_phone'),
+                applicantTo: get(s, 'Tổ', 'Thuộc tổ', 'applicant_to'),
+                totalItems: get(s, 'Số mục', 'Tổng số mục', 'total_items') || '0',
+                categoriesText: get(s, 'Danh mục', 'Danh sách loại mục', 'categories_text'),
                 itemsData: items,
             };
         });
