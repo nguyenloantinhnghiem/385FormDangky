@@ -157,6 +157,23 @@ export default function DynamicFormScreen({ formType, formLabel, defaultValues, 
                     </div>
                 );
             }
+            case 'radio':
+                return (
+                    <div className="flex flex-col gap-2 mt-1">
+                        {field.options.map((opt) => (
+                            <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name={field.fieldKey}
+                                    checked={(value as string) === opt}
+                                    onChange={() => handleChange(field.fieldKey, opt)}
+                                    className="w-4 h-4 border-stone-300 text-amber-600 focus:ring-amber-500"
+                                />
+                                <span className="text-sm text-stone-700">{opt}</span>
+                            </label>
+                        ))}
+                    </div>
+                );
             default:
                 return <Input value={(value as string) || ''} onChange={(e) => handleChange(field.fieldKey, e.target.value)} />;
         }
