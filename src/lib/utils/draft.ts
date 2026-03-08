@@ -1,18 +1,22 @@
 import type { DraftState } from '@/types';
 
-const DRAFT_KEY = 'registration_draft_v1';
+const DRAFT_PREFIX = 'reg_draft_';
 
-export function saveDraft(state: DraftState): void {
+function draftKey(formKey?: string): string {
+    return DRAFT_PREFIX + (formKey || '_landing');
+}
+
+export function saveDraft(state: DraftState, formKey?: string): void {
     try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
+        localStorage.setItem(draftKey(formKey), JSON.stringify(state));
     } catch {
-        // localStorage not available or quota exceeded — silent fail
+        // silent
     }
 }
 
-export function loadDraft(): DraftState | null {
+export function loadDraft(formKey?: string): DraftState | null {
     try {
-        const raw = localStorage.getItem(DRAFT_KEY);
+        const raw = localStorage.getItem(draftKey(formKey));
         if (!raw) return null;
         return JSON.parse(raw) as DraftState;
     } catch {
@@ -20,18 +24,30 @@ export function loadDraft(): DraftState | null {
     }
 }
 
-export function clearDraft(): void {
+export function clearDraft(formKey?: string): void {
     try {
-        localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(draftKey(formKey));
     } catch {
         // silent
     }
 }
 
-export function hasDraft(): boolean {
+export function hasDraft(formKey?: string): boolean {
     try {
-        return !!localStorage.getItem(DRAFT_KEY);
+        return !!localStorage.getItem(draftKey(formKey));
     } catch {
         return false;
+    }
+}
+
+/** Clear all drafts (used when starting completely fresh) */
+export function clearAllDrafts(): void {
+    try {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith(DRAFT_PREFIX));
+        keys.forEach(k => localStorage.removeItem(k));
+        // Also clear old format key
+        localStorage.removeItem('registration_draft_v1');
+    } catch {
+        // silent
     }
 }

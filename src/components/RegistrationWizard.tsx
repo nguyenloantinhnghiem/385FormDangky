@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { CEREMONY_MAP } from '@/config/categories';
 import { submitRegistration } from '@/actions/submit';
 import { submitDynamicRegistration } from '@/actions/submit-dynamic';
-import { saveDraft, loadDraft, clearDraft, hasDraft } from '@/lib/utils/draft';
+import { saveDraft, loadDraft, clearDraft, hasDraft, clearAllDrafts } from '@/lib/utils/draft';
 import type { Applicant, CeremonyType, ScreenName } from '@/types';
 import type { AllInOneFormData } from '@/components/screens/RegistrationFormScreen';
 import type { RegistrationType } from '@/actions/settings';
@@ -136,9 +136,22 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [draftLoaded, setDraftLoaded] = useState(false);
 
+    // Form key for draft isolation
+    const formKey = registrationType?.key;
 
-    // Load draft
+    // On direct link: clear old draft for this form to start fresh
     useEffect(() => {
+        if (initialRegType) {
+            clearDraft(initialRegType.key);
+            // Also clear legacy shared draft
+            clearAllDrafts();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Load draft only when on landing page (no initialRegType)
+    useEffect(() => {
+        if (initialRegType) return; // Direct link — always fresh
         if (typeof window !== 'undefined' && hasDraft()) {
             const draft = loadDraft();
             if (draft) {
@@ -146,7 +159,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                 const savedScreen = draft.currentScreen || 'landing';
 
                 if (!validScreens.includes(savedScreen)) {
-                    clearDraft();
+                    clearDraft(formKey);
                     return;
                 }
 
@@ -156,6 +169,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                 setDraftLoaded(true);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Auto-save draft
@@ -166,8 +180,8 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             items: [],
             currentScreen: screen,
             lastUpdated: new Date().toISOString(),
-        });
-    }, [ceremonyType, applicant, screen]);
+        }, formKey);
+    }, [ceremonyType, applicant, screen, formKey]);
 
     useEffect(() => {
         if (screen !== 'landing' && screen !== 'success') {
@@ -313,7 +327,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
             if (result.success && result.code) {
                 setSubmissionCode(result.code);
-                clearDraft();
+                clearDraft(formKey);
                 goTo('success');
             } else {
                 setSubmitError(result.error || 'Đã có lỗi xảy ra. Vui lòng thử lại.');
@@ -333,7 +347,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
         setDynamicFormData(null);
         setDynamicFieldLabels({});
         setSubmissionCode('');
-        clearDraft();
+        clearDraft(formKey);
         goTo('landing');
     };
 
