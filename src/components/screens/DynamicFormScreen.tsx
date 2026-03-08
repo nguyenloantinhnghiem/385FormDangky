@@ -50,10 +50,22 @@ export default function DynamicFormScreen({ formType, formLabel, defaultValues, 
         });
     };
 
+    // Check if a field should be visible based on its showWhen condition
+    const isFieldVisible = (field: FormFieldDef): boolean => {
+        if (!field.showWhen) return true;
+        const depValue = formData[field.showWhen.fieldKey];
+        // Support multichoice (array contains value)
+        if (Array.isArray(depValue)) return depValue.includes(field.showWhen.value);
+        // Exact string match
+        return String(depValue || '') === field.showWhen.value;
+    };
+
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
         for (const sec of sections) {
             for (const f of sec.fields) {
+                // Skip hidden fields
+                if (!isFieldVisible(f)) continue;
                 if (f.required) {
                     const val = formData[f.fieldKey];
                     if (f.fieldType === 'multichoice') {
@@ -72,14 +84,18 @@ export default function DynamicFormScreen({ formType, formLabel, defaultValues, 
 
     const handleSubmit = () => {
         if (validate()) {
-            // Build fieldKey → fieldLabel mapping
+            // Build fieldKey → fieldLabel mapping (only visible fields)
             const labels: Record<string, string> = {};
+            const visibleData: Record<string, unknown> = {};
             for (const sec of sections) {
                 for (const f of sec.fields) {
-                    labels[f.fieldKey] = f.fieldLabel;
+                    if (isFieldVisible(f)) {
+                        labels[f.fieldKey] = f.fieldLabel;
+                        visibleData[f.fieldKey] = formData[f.fieldKey];
+                    }
                 }
             }
-            onNext(formData, labels);
+            onNext(visibleData, labels);
         }
     };
 
@@ -217,7 +233,7 @@ export default function DynamicFormScreen({ formType, formLabel, defaultValues, 
                             <CardTitle className="text-base">{section.name}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {section.fields.map((field) => (
+                            {section.fields.filter(isFieldVisible).map((field) => (
                                 <div key={field.fieldKey} className="space-y-1.5">
                                     {field.fieldType !== 'checkbox' && (
                                         <Label htmlFor={field.fieldKey}>
