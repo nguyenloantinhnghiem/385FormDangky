@@ -117,7 +117,14 @@ interface WizardProps {
 }
 
 export default function RegistrationWizard({ initialRegType }: WizardProps) {
-    const [screen, setScreen] = useState<ScreenName>(initialRegType ? 'applicant' : 'landing');
+    // Determine the starting screen based on initialRegType
+    const getInitialScreen = (): ScreenName => {
+        if (!initialRegType) return 'landing';
+        if (initialRegType.formType === 'cau_sieu') return 'ceremony_select';
+        return 'applicant';
+    };
+
+    const [screen, setScreen] = useState<ScreenName>(getInitialScreen());
     const [ceremonyType, setCeremonyType] = useState<CeremonyType | null>(null);
     const [registrationType, setRegistrationType] = useState<RegistrationType | null>(initialRegType || null);
     const [applicant, setApplicant] = useState<Applicant | null>(null);
@@ -129,12 +136,6 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [draftLoaded, setDraftLoaded] = useState(false);
 
-    // If initialRegType is cau_sieu, go to ceremony_select instead of applicant
-    useEffect(() => {
-        if (initialRegType?.formType === 'cau_sieu' && screen === 'applicant' && !applicant) {
-            setScreen('ceremony_select');
-        }
-    }, [initialRegType, screen, applicant]);
 
     // Load draft
     useEffect(() => {
