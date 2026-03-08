@@ -101,15 +101,6 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
                             </select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="notes">Ghi chú chung</Label>
-                            <Textarea
-                                id="notes"
-                                placeholder="Ghi chú thêm nếu có"
-                                rows={2}
-                                {...register('notes')}
-                            />
-                        </div>
 
                         <div className="flex gap-3 pt-4">
                             <Button type="button" variant="outline" onClick={onBack} className="flex-1">
