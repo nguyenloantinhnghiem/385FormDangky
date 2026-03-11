@@ -58,7 +58,7 @@ export async function getLandingConfig(): Promise<LandingConfig> {
         const notes = notesRaw.split('\n').filter((n: string) => n.trim());
 
         return {
-            title: settings['landing_title'] || 'Đăng Ký Cầu Siêu',
+            title: settings['landing_title'] || 'Đăng Ký Trực Tuyến',
             subtitle: settings['landing_subtitle'] || 'Hệ thống đăng ký trực tuyến — nhanh chóng, dễ dàng, chính xác.',
             notes,
             formWarning: settings['form_warning'] || '',
@@ -69,7 +69,7 @@ export async function getLandingConfig(): Promise<LandingConfig> {
         };
     } catch {
         return {
-            title: 'Đăng Ký Cầu Siêu',
+            title: 'Đăng Ký Trực Tuyến',
             subtitle: 'Hệ thống đăng ký trực tuyến',
             notes: [],
             formWarning: '',
@@ -107,7 +107,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
             // No data — return default
             return [{
                 key: 'cau_sieu',
-                label: 'Đăng ký Cầu Siêu',
+                label: 'Đăng ký',
                 description: 'Đăng ký danh sách cầu siêu hương linh',
                 icon: '🙏',
                 open: true,
@@ -133,7 +133,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
     } catch {
         return [{
             key: 'cau_sieu',
-            label: 'Đăng ký Cầu Siêu',
+            label: 'Đăng ký',
             description: 'Đăng ký danh sách cầu siêu hương linh',
             icon: '🙏',
             open: true,

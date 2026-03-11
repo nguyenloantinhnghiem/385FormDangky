@@ -46,7 +46,7 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
         );
     }
 
-    const title = config?.title || 'Đăng Ký Cầu Siêu';
+    const title = config?.title || 'Đăng Ký Trực Tuyến';
     const subtitle = config?.subtitle || '';
     const notes = config?.notes || [];
     const isClosed = config ? !config.registrationOpen : false;

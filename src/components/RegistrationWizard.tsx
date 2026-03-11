@@ -230,7 +230,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     const handleStart = (regType?: RegistrationType) => {
         if (regType) setRegistrationType(regType);
         if (regType?.formType === 'cau_sieu') {
-            // Cầu Siêu flow → ceremony select
+            // Legacy cau_sieu flow → ceremony select
             goTo('ceremony_select');
         } else {
             // Other types → skip ceremony select (use reg type label as ceremony)
@@ -385,7 +385,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                 <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-stone-200 px-4 py-3">
                     <div className="max-w-lg mx-auto flex items-center justify-between">
                         <h1 className="text-sm font-bold text-amber-600">
-                            {registrationType?.label || 'Đăng Ký Cầu Siêu'}
+                            {registrationType?.label || 'Đăng Ký'}
                         </h1>
                         {ceremonyType && (
                             <Badge variant="outline" className="text-xs">
