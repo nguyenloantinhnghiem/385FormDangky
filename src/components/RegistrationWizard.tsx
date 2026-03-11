@@ -77,6 +77,34 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
                         if (value === undefined || value === null || value === '' || value === false) return null;
                         if (Array.isArray(value) && value.length === 0) return null;
                         const label = fieldLabels[key] || key;
+
+                        // Group data: array of objects
+                        if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+                            const items = value as Record<string, unknown>[];
+                            return (
+                                <div key={key} className="space-y-2">
+                                    <span className="text-stone-500 text-sm">{label}:</span>
+                                    {items.map((item, idx) => (
+                                        <div key={idx} className="ml-3 pl-3 border-l-2 border-amber-200 text-sm space-y-0.5">
+                                            <span className="text-xs font-medium text-amber-600">#{idx + 1}</span>
+                                            {Object.entries(item).map(([subKey, subVal]) => {
+                                                if (!subVal || subVal === '') return null;
+                                                const subLabel = fieldLabels[`${key}.${subKey}`] || subKey;
+                                                return (
+                                                    <div key={subKey} className="flex">
+                                                        <span className="text-stone-500 mr-2">{subLabel}:</span>
+                                                        <span className="text-stone-800 font-medium">
+                                                            {Array.isArray(subVal) ? (subVal as string[]).join(', ') : String(subVal)}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        }
+
                         return (
                             <div key={key} className="flex text-sm">
                                 <span className="text-stone-500 mr-2">{label}:</span>

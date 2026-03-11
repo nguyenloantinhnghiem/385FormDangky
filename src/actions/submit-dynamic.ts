@@ -37,7 +37,17 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
         // Add form fields as key-value pairs
         for (const [key, value] of Object.entries(formData)) {
             if (value === undefined || value === null || value === '' || value === false) continue;
-            if (Array.isArray(value)) {
+            // Group data: array of objects
+            if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+                const items = value as Record<string, unknown>[];
+                lines.push(`• ${key}:`);
+                items.forEach((item, idx) => {
+                    const parts = Object.entries(item)
+                        .filter(([, v]) => v !== undefined && v !== null && v !== '')
+                        .map(([k, v]) => `${k}: ${Array.isArray(v) ? (v as string[]).join(', ') : String(v)}`);
+                    lines.push(`  ${idx + 1}. ${parts.join(' | ')}`);
+                });
+            } else if (Array.isArray(value)) {
                 if (value.length === 0) continue;
                 lines.push(`• ${key}: ${value.join(', ')}`);
             } else if (value === true) {
