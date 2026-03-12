@@ -26,6 +26,19 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
         const submissionCode = generateSubmissionCode();
         const now = new Date().toISOString();
 
+        // Build label map from form field definitions
+        const sections = await getFormFields(registrationType);
+        const labelMap: Record<string, string> = {};
+        for (const sec of sections) {
+            for (const f of sec.fields) {
+                labelMap[f.fieldKey] = f.fieldLabel;
+                if (f.groupKey && f.subFieldKey) {
+                    labelMap[`${f.groupKey}.${f.subFieldKey}`] = f.fieldLabel;
+                }
+            }
+        }
+        const getLabel = (k: string) => labelMap[k] || k;
+
         // Build formatted text from form data
         const lines: string[] = [];
         lines.push(`Loại đăng ký: ${registrationLabel}`);
@@ -34,26 +47,26 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
         if (applicant.to) lines.push(`Thuộc: ${applicant.to}`);
         lines.push('');
 
-        // Add form fields as key-value pairs
+        // Add form fields as key-value pairs (using labels)
         for (const [key, value] of Object.entries(formData)) {
             if (value === undefined || value === null || value === '' || value === false) continue;
             // Group data: array of objects
             if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
                 const items = value as Record<string, unknown>[];
-                lines.push(`• ${key}:`);
+                lines.push(`• ${getLabel(key)}:`);
                 items.forEach((item, idx) => {
                     const parts = Object.entries(item)
                         .filter(([, v]) => v !== undefined && v !== null && v !== '')
-                        .map(([k, v]) => `${k}: ${Array.isArray(v) ? (v as string[]).join(', ') : String(v)}`);
+                        .map(([k, v]) => `${getLabel(`${key}.${k}`)}: ${Array.isArray(v) ? (v as string[]).join(', ') : String(v)}`);
                     lines.push(`  ${idx + 1}. ${parts.join(' | ')}`);
                 });
             } else if (Array.isArray(value)) {
                 if (value.length === 0) continue;
-                lines.push(`• ${key}: ${value.join(', ')}`);
+                lines.push(`• ${getLabel(key)}: ${value.join(', ')}`);
             } else if (value === true) {
-                lines.push(`• ${key}: Có`);
+                lines.push(`• ${getLabel(key)}: Có`);
             } else {
-                lines.push(`• ${key}: ${String(value)}`);
+                lines.push(`• ${getLabel(key)}: ${String(value)}`);
             }
         }
 
@@ -87,7 +100,12 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
             display_name: registrationLabel,
             summary_text: Object.entries(formData)
                 .filter(([, v]) => v !== undefined && v !== null && v !== '' && v !== false && !(Array.isArray(v) && v.length === 0))
-                .map(([k, v]) => `${k}: ${v === true ? 'Có' : Array.isArray(v) ? v.join(', ') : String(v).slice(0, 50)}`)
+                .map(([k, v]) => {
+                    if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'object') {
+                        return `${getLabel(k)}: ${(v as Record<string, unknown>[]).length} mục`;
+                    }
+                    return `${getLabel(k)}: ${v === true ? 'Có' : Array.isArray(v) ? v.join(', ') : String(v).slice(0, 50)}`;
+                })
                 .join(' • '),
             subject_name: applicant.tinChu,
             reference_value: '',
@@ -124,9 +142,8 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
             detail: `Dynamic form "${registrationLabel}" submitted via webapp`,
         });
 
-        // Write to per-form-type sheet (KQ_{label})
+        // Write to per-form-type sheet (KQ_{label}) — reuse sections from above
         try {
-            const sections = await getFormFields(registrationType);
             const fieldConfigs: Record<string, { label: string; separateColumn: boolean }> = {};
             for (const sec of sections) {
                 for (const f of sec.fields) {
