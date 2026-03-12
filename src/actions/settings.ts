@@ -38,6 +38,131 @@ export async function getRegistrationStatus(): Promise<RegistrationStatus> {
 }
 
 // ============================================================
+// Schedule system — auto open/close by time
+// ============================================================
+type ScheduleMode = 'manual' | 'weekly' | 'monthly';
+
+const DAY_MAP: Record<string, number> = {
+    'sun': 0, 'mon': 1, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6,
+    'cn': 0, 't2': 1, 't3': 2, 't4': 3, 't5': 4, 't6': 5, 't7': 6,
+};
+
+function parseTime(timeStr: string): { hours: number; minutes: number } | null {
+    const m = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    return { hours: parseInt(m[1], 10), minutes: parseInt(m[2], 10) };
+}
+
+function getNowInTZ(tz: string): Date {
+    const now = new Date();
+    const str = now.toLocaleString('en-US', { timeZone: tz });
+    return new Date(str);
+}
+
+interface ScheduleResult {
+    isOpen: boolean;
+    nextEventTime: string;  // ISO string or empty
+    nextEventType: 'open' | 'close' | '';
+}
+
+function computeSchedule(
+    mode: ScheduleMode,
+    openDaysRaw: string,
+    openTimeRaw: string,
+    closeTimeRaw: string,
+    tz: string,
+    manualOpen: boolean,
+): ScheduleResult {
+    if (mode === 'manual') {
+        return { isOpen: manualOpen, nextEventTime: '', nextEventType: '' };
+    }
+
+    const now = getNowInTZ(tz);
+    const openTime = parseTime(openTimeRaw);
+    const closeTime = parseTime(closeTimeRaw);
+    if (!openTime || !closeTime) {
+        return { isOpen: manualOpen, nextEventTime: '', nextEventType: '' };
+    }
+
+    const currentDay = now.getDay();
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+    const currentMinutes = currentHour * 60 + currentMin;
+    const openMinutes = openTime.hours * 60 + openTime.minutes;
+    const closeMinutes = closeTime.hours * 60 + closeTime.minutes;
+
+    // Parse allowed days
+    let allowedDays: number[] = [];
+    if (mode === 'weekly') {
+        allowedDays = openDaysRaw.split(',').map(d => {
+            const key = d.trim().toLowerCase();
+            return DAY_MAP[key] ?? parseInt(key, 10);
+        }).filter(n => !isNaN(n));
+    }
+
+    // Parse allowed dates (for monthly)
+    let allowedDates: number[] = [];
+    if (mode === 'monthly') {
+        allowedDates = openDaysRaw.split(',').map(d => parseInt(d.trim(), 10)).filter(n => !isNaN(n));
+    }
+
+    // Check if today is an allowed day
+    let todayAllowed = false;
+    if (mode === 'weekly') {
+        todayAllowed = allowedDays.includes(currentDay);
+    } else if (mode === 'monthly') {
+        todayAllowed = allowedDates.includes(now.getDate());
+    }
+
+    // Is currently in open window?
+    const inTimeWindow = currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+    const isOpen = todayAllowed && inTimeWindow;
+
+    // Calculate next event
+    let nextEventTime = '';
+    let nextEventType: 'open' | 'close' | '' = '';
+
+    if (isOpen) {
+        // Next event: close time today
+        nextEventType = 'close';
+        const closeDate = new Date(now);
+        closeDate.setHours(closeTime.hours, closeTime.minutes, 0, 0);
+        nextEventTime = closeDate.toISOString();
+    } else {
+        // Next event: find next open time
+        nextEventType = 'open';
+
+        // If today is allowed and we haven't passed open time yet
+        if (todayAllowed && currentMinutes < openMinutes) {
+            const openDate = new Date(now);
+            openDate.setHours(openTime.hours, openTime.minutes, 0, 0);
+            nextEventTime = openDate.toISOString();
+        } else {
+            // Find next allowed day
+            for (let offset = 1; offset <= 31; offset++) {
+                const futureDate = new Date(now);
+                futureDate.setDate(futureDate.getDate() + offset);
+
+                let dayAllowed = false;
+                if (mode === 'weekly') {
+                    dayAllowed = allowedDays.includes(futureDate.getDay());
+                } else if (mode === 'monthly') {
+                    dayAllowed = allowedDates.includes(futureDate.getDate());
+                }
+
+                if (dayAllowed) {
+                    futureDate.setHours(openTime.hours, openTime.minutes, 0, 0);
+                    nextEventTime = futureDate.toISOString();
+                    break;
+                }
+            }
+        }
+    }
+
+    return { isOpen, nextEventTime, nextEventType };
+}
+
+// ============================================================
 // Landing page configuration
 // ============================================================
 export interface LandingConfig {
@@ -49,6 +174,10 @@ export interface LandingConfig {
     registrationOpen: boolean;
     closeMessage: string;
     nextDate: string;
+    // Schedule fields
+    scheduleMode: ScheduleMode;
+    nextEventTime: string;
+    nextEventType: 'open' | 'close' | '';
 }
 
 export async function getLandingConfig(): Promise<LandingConfig> {
@@ -57,15 +186,30 @@ export async function getLandingConfig(): Promise<LandingConfig> {
         const notesRaw = settings['landing_notes'] || '';
         const notes = notesRaw.split('\n').filter((n: string) => n.trim());
 
+        const scheduleMode = (settings['schedule_mode'] || 'manual') as ScheduleMode;
+        const manualOpen = (settings['registration_open'] || 'true').toLowerCase() === 'true';
+
+        const schedule = computeSchedule(
+            scheduleMode,
+            settings['schedule_open_days'] || 'Mon,Tue,Wed,Thu,Fri,Sat,Sun',
+            settings['schedule_open_time'] || '06:00',
+            settings['schedule_close_time'] || '22:00',
+            settings['schedule_timezone'] || 'Asia/Ho_Chi_Minh',
+            manualOpen,
+        );
+
         return {
             title: settings['landing_title'] || 'Đăng Ký Trực Tuyến',
             subtitle: settings['landing_subtitle'] || 'Hệ thống đăng ký trực tuyến — nhanh chóng, dễ dàng, chính xác.',
             notes,
             formWarning: settings['form_warning'] || '',
             videoUrl: settings['video_url'] || '',
-            registrationOpen: (settings['registration_open'] || 'true').toLowerCase() === 'true',
-            closeMessage: settings['registration_close_message'] || 'Đăng ký đã đóng.',
+            registrationOpen: schedule.isOpen,
+            closeMessage: settings['registration_close_message'] || 'Đăng ký đang ngoài khung giờ hoạt động.',
             nextDate: settings['next_registration_date'] || '',
+            scheduleMode,
+            nextEventTime: schedule.nextEventTime,
+            nextEventType: schedule.nextEventType,
         };
     } catch {
         return {
@@ -77,6 +221,9 @@ export async function getLandingConfig(): Promise<LandingConfig> {
             registrationOpen: true,
             closeMessage: '',
             nextDate: '',
+            scheduleMode: 'manual',
+            nextEventTime: '',
+            nextEventType: '',
         };
     }
 }
@@ -91,8 +238,8 @@ export interface RegistrationType {
     icon: string;
     open: boolean;
     order: number;
-    formType: string; // 'cau_sieu' | 'custom' | etc.
-    parent: string;   // key of parent type, empty = root
+    formType: string;
+    parent: string;
 }
 
 export async function getRegistrationTypes(): Promise<RegistrationType[]> {
@@ -104,11 +251,10 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
         });
         const rows = (res.data.values as string[][]) || [];
         if (rows.length < 2) {
-            // No data — return default
             return [{
                 key: 'cau_sieu',
                 label: 'Đăng ký',
-                description: 'Đăng ký danh sách cầu siêu hương linh',
+                description: 'Đăng ký danh sách',
                 icon: '🙏',
                 open: true,
                 order: 1,
@@ -134,7 +280,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
         return [{
             key: 'cau_sieu',
             label: 'Đăng ký',
-            description: 'Đăng ký danh sách cầu siêu hương linh',
+            description: 'Đăng ký danh sách',
             icon: '🙏',
             open: true,
             order: 1,

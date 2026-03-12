@@ -1,14 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Heart, RotateCcw, Play, Lock, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Heart, RotateCcw, Play, Lock, Clock, ChevronLeft, Search } from 'lucide-react';
 import { getLandingConfig, getRegistrationTypes, type LandingConfig, type RegistrationType } from '@/actions/settings';
 
 interface LandingScreenProps {
     onStart: (regType?: RegistrationType) => void;
     onLookup: () => void;
+}
+
+// Countdown hook
+function useCountdown(targetISO: string) {
+    const [timeLeft, setTimeLeft] = useState('');
+    useEffect(() => {
+        if (!targetISO) return;
+        const tick = () => {
+            const diff = new Date(targetISO).getTime() - Date.now();
+            if (diff <= 0) { setTimeLeft(''); return; }
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            if (h > 24) {
+                const d = Math.floor(h / 24);
+                setTimeLeft(`${d} ngày ${h % 24}h`);
+            } else if (h > 0) {
+                setTimeLeft(`${h}h ${m}m`);
+            } else {
+                setTimeLeft(`${m}m ${s}s`);
+            }
+        };
+        tick();
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, [targetISO]);
+    return timeLeft;
 }
 
 export default function LandingScreen({ onStart, onLookup }: LandingScreenProps) {
@@ -20,26 +47,23 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
 
     useEffect(() => {
         Promise.all([getLandingConfig(), getRegistrationTypes()])
-            .then(([cfg, types]) => {
-                setConfig(cfg);
-                setAllTypes(types);
-            })
+            .then(([cfg, types]) => { setConfig(cfg); setAllTypes(types); })
             .finally(() => setLoading(false));
     }, []);
 
-    // Convert YouTube URL to embed URL
-    const getEmbedUrl = (url: string) => {
+    const getEmbedUrl = useCallback((url: string) => {
         if (url.includes('/embed/')) return url;
         const match = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&?]+)/);
-        if (match) return `https://www.youtube.com/embed/${match[1]}`;
-        return url;
-    };
+        return match ? `https://www.youtube.com/embed/${match[1]}` : url;
+    }, []);
+
+    const countdown = useCountdown(config?.nextEventTime || '');
 
     if (loading) {
         return (
-            <div className="min-h-[80vh] flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-3xl mx-auto mb-4 animate-pulse">🙏</div>
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-3xl mx-auto mb-4 animate-pulse shadow-lg">🙏</div>
                     <p className="text-stone-400 text-sm">Đang tải...</p>
                 </div>
             </div>
@@ -51,15 +75,12 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
     const notes = config?.notes || [];
     const isClosed = config ? !config.registrationOpen : false;
 
-    // Root types = those without a parent
     const rootTypes = allTypes.filter((t) => !t.parent && t.open);
-    // Children of selected parent
     const childTypes = selectedParent
         ? allTypes.filter((t) => t.parent === selectedParent.key && t.open)
         : [];
 
     const handleTypeClick = (rt: RegistrationType) => {
-        // Check if this type has children
         const children = allTypes.filter((t) => t.parent === rt.key && t.open);
         if (children.length > 0) {
             setSelectedParent(rt);
@@ -69,182 +90,193 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
     };
 
     return (
-        <div className="min-h-[80vh] flex flex-col items-center justify-center text-center animate-fade-in">
-            <div className="relative mb-6">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-4xl shadow-lg animate-float">
-                    🙏
-                </div>
-                <div className="absolute -top-1 -right-1 text-xl animate-bounce-in">✨</div>
-            </div>
+        <div className="min-h-screen bg-gradient-to-b from-amber-50/80 via-white to-orange-50/30">
+            {/* ── Hero Section ── */}
+            <div className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-orange-400/5 to-transparent" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-300/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-orange-300/15 to-transparent rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
 
-            <h1 className="text-2xl font-bold text-stone-800 mb-3">{title}</h1>
-            {subtitle && (
-                <p className="text-stone-500 mb-2 max-w-xs">{subtitle}</p>
-            )}
-            <p className="text-stone-400 text-sm mb-6 max-w-xs">
-                Bạn có thể đăng ký <strong className="text-amber-600">nhiều mục</strong> cùng lúc, xem lại và chỉnh sửa trước khi gửi.
-            </p>
+                <div className="relative max-w-lg mx-auto px-4 pt-12 pb-8 text-center animate-fade-in">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-4xl shadow-xl shadow-amber-500/25 mb-6">
+                        🙏
+                    </div>
+                    <h1 className="text-2xl font-extrabold bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 bg-clip-text text-transparent mb-2">
+                        {title}
+                    </h1>
+                    {subtitle && (
+                        <p className="text-stone-500 text-sm max-w-xs mx-auto mb-1">{subtitle}</p>
+                    )}
 
-            {/* Warning banner */}
-            {config?.formWarning && (
-                <div className="w-full max-w-sm mb-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 font-medium">
-                    ⚠️ {config.formWarning}
-                </div>
-            )}
-
-            {/* Registration CLOSED */}
-            {isClosed && (
-                <div className="w-full max-w-sm mb-6">
-                    <Card className="border-orange-200 bg-orange-50">
-                        <CardContent className="p-5 text-center">
-                            <Lock className="w-8 h-8 text-orange-500 mx-auto mb-3" />
-                            <p className="text-stone-700 font-medium mb-2">{config?.closeMessage}</p>
-                            {config?.nextDate && (
-                                <div className="flex items-center justify-center gap-2 text-sm text-orange-600">
-                                    <Calendar className="w-4 h-4" />
-                                    Đợt tiếp theo: <strong>{config.nextDate}</strong>
-                                </div>
+                    {/* Schedule status badge */}
+                    {config?.scheduleMode !== 'manual' && (
+                        <div className="flex items-center justify-center gap-2 mt-3">
+                            {isClosed ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                    Ngoài giờ hoạt động
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    Đang mở đăng ký
+                                </span>
                             )}
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+                        </div>
+                    )}
 
-            {/* Video hướng dẫn */}
-            {config?.videoUrl && (
-                <div className="w-full max-w-sm mb-6">
-                    {!showVideo ? (
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowVideo(true)}
-                            className="w-full gap-2 py-5 border-blue-200 text-blue-600 hover:bg-blue-50"
-                        >
-                            <Play className="w-5 h-5" />
-                            Xem video hướng dẫn sử dụng
-                        </Button>
-                    ) : (
-                        <div className="rounded-xl overflow-hidden shadow-lg border border-stone-200">
-                            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                                <iframe
-                                    src={getEmbedUrl(config.videoUrl)}
-                                    className="absolute inset-0 w-full h-full"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                    title="Hướng dẫn sử dụng"
-                                />
-                            </div>
-                            <button
-                                onClick={() => setShowVideo(false)}
-                                className="w-full py-2 text-xs text-stone-400 hover:text-stone-600"
-                            >
-                                Ẩn video
-                            </button>
+                    {/* Countdown */}
+                    {countdown && config?.nextEventType && (
+                        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/60 backdrop-blur border border-stone-200/50 text-xs text-stone-600">
+                            <Clock className="w-3.5 h-3.5 text-amber-500" />
+                            {config.nextEventType === 'close' ? 'Đóng sau' : 'Mở sau'}: <strong className="text-amber-700">{countdown}</strong>
                         </div>
                     )}
                 </div>
-            )}
+            </div>
 
-            {/* Registration type buttons */}
-            {!isClosed && (
-                <div className="flex flex-col gap-3 w-full max-w-sm">
-                    {/* Sub-type selection (when parent is selected) */}
-                    {selectedParent ? (
-                        <>
-                            <div className="flex items-center gap-2 mb-1">
+            {/* ── Main Content ── */}
+            <div className="max-w-lg mx-auto px-4 pb-12">
+                {/* Warning */}
+                {config?.formWarning && (
+                    <div className="mb-4 bg-red-50/80 backdrop-blur border border-red-200/60 rounded-xl px-4 py-3 text-sm text-red-700 font-medium shadow-sm">
+                        ⚠️ {config.formWarning}
+                    </div>
+                )}
+
+                {/* Closed state */}
+                {isClosed && (
+                    <Card className="mb-6 border-orange-200/60 bg-gradient-to-br from-orange-50 to-amber-50 shadow-sm">
+                        <CardContent className="p-6 text-center">
+                            <div className="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center mx-auto mb-3">
+                                <Lock className="w-7 h-7 text-orange-500" />
+                            </div>
+                            <p className="text-stone-700 font-medium mb-2">{config?.closeMessage}</p>
+                            {config?.nextDate && (
+                                <p className="text-sm text-orange-600">
+                                    Đợt tiếp theo: <strong>{config.nextDate}</strong>
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Video */}
+                {config?.videoUrl && (
+                    <div className="mb-5">
+                        {!showVideo ? (
+                            <button
+                                onClick={() => setShowVideo(true)}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/60 backdrop-blur border border-stone-200/50 text-sm text-stone-600 hover:bg-white/80 hover:border-blue-200 hover:text-blue-600 transition-all shadow-sm"
+                            >
+                                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                    <Play className="w-4 h-4 text-blue-500" />
+                                </div>
+                                <span>Xem video hướng dẫn sử dụng</span>
+                            </button>
+                        ) : (
+                            <div className="rounded-xl overflow-hidden shadow-lg border border-stone-200/50">
+                                <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                                    <iframe
+                                        src={getEmbedUrl(config.videoUrl)}
+                                        className="absolute inset-0 w-full h-full"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        title="Hướng dẫn sử dụng"
+                                    />
+                                </div>
+                                <button onClick={() => setShowVideo(false)} className="w-full py-2 text-xs text-stone-400 hover:text-stone-600 bg-white">
+                                    Ẩn video
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Registration cards */}
+                {!isClosed && (
+                    <div className="space-y-3">
+                        {selectedParent ? (
+                            <>
                                 <button
                                     onClick={() => setSelectedParent(null)}
-                                    className="text-sm text-amber-600 hover:underline flex items-center gap-1"
+                                    className="flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-700 font-medium mb-1 transition-colors"
                                 >
-                                    ← Quay lại
+                                    <ChevronLeft className="w-4 h-4" />
+                                    {selectedParent.label}
                                 </button>
-                                <span className="text-sm text-stone-400">|</span>
-                                <span className="text-sm font-medium text-stone-700">{selectedParent.label}</span>
-                            </div>
-                            <p className="text-sm text-stone-500 mb-1">Chọn trường hợp:</p>
-                            {childTypes.map((rt) => (
-                                <Card
-                                    key={rt.key}
-                                    className="cursor-pointer hover:border-amber-300 hover:shadow-md transition-all"
-                                    onClick={() => onStart(rt)}
-                                >
-                                    <CardContent className="p-4 flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-xl flex-shrink-0">
-                                            {rt.icon}
-                                        </div>
-                                        <div className="text-left flex-1">
-                                            <p className="font-medium text-stone-800">{rt.label}</p>
-                                            {rt.description && (
-                                                <p className="text-xs text-stone-400">{rt.description}</p>
-                                            )}
-                                        </div>
-                                        <ArrowRight className="w-4 h-4 text-stone-300" />
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </>
-                    ) : rootTypes.length <= 1 ? (
-                        /* Only one root type — single button */
-                        <Button
-                            onClick={() => handleTypeClick(rootTypes[0])}
-                            className="px-8 py-6 text-lg gap-2 shadow-lg"
-                        >
-                            Bắt đầu đăng ký <ArrowRight className="w-5 h-5" />
-                        </Button>
-                    ) : (
-                        /* Multiple root types — show cards */
-                        <>
-                            <p className="text-sm font-medium text-stone-600 mb-1">Chọn loại đăng ký:</p>
-                            {rootTypes.map((rt) => (
-                                <Card
-                                    key={rt.key}
-                                    className="cursor-pointer hover:border-amber-300 hover:shadow-md transition-all"
-                                    onClick={() => handleTypeClick(rt)}
-                                >
-                                    <CardContent className="p-4 flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-xl flex-shrink-0">
-                                            {rt.icon}
-                                        </div>
-                                        <div className="text-left flex-1">
-                                            <p className="font-medium text-stone-800">{rt.label}</p>
-                                            {rt.description && (
-                                                <p className="text-xs text-stone-400">{rt.description}</p>
-                                            )}
-                                        </div>
-                                        <ArrowRight className="w-4 h-4 text-stone-300" />
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </>
-                    )}
-                    <Button
-                        variant="outline"
-                        onClick={onLookup}
-                        className="px-8 py-5 gap-2 border-stone-300 text-stone-600"
-                    >
-                        <RotateCcw className="w-4 h-4" />
-                        Đăng ký lại (tra cứu SĐT)
-                    </Button>
-                </div>
-            )}
+                                <p className="text-xs text-stone-400 mb-2">Chọn trường hợp:</p>
+                                {childTypes.map((rt) => (
+                                    <FormCard key={rt.key} rt={rt} onClick={() => onStart(rt)} />
+                                ))}
+                            </>
+                        ) : rootTypes.length <= 1 ? (
+                            <Button
+                                onClick={() => handleTypeClick(rootTypes[0])}
+                                className="w-full px-6 py-6 text-base gap-2 shadow-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl"
+                            >
+                                Bắt đầu đăng ký <ArrowRight className="w-5 h-5" />
+                            </Button>
+                        ) : (
+                            <>
+                                <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">Chọn loại đăng ký</p>
+                                {rootTypes.map((rt) => (
+                                    <FormCard key={rt.key} rt={rt} onClick={() => handleTypeClick(rt)} />
+                                ))}
+                            </>
+                        )}
 
-            {/* Notes card */}
-            {notes.length > 0 && (
-                <Card className="mt-8 max-w-sm">
-                    <CardContent className="p-4">
+                        {/* Secondary actions */}
+                        <div className="pt-2">
+                            <button
+                                onClick={onLookup}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-stone-500 hover:text-amber-700 hover:bg-amber-50/50 border border-transparent hover:border-amber-200/50 transition-all"
+                            >
+                                <Search className="w-4 h-4" />
+                                Tra cứu đăng ký cũ (SĐT)
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Notes */}
+                {notes.length > 0 && (
+                    <div className="mt-8 rounded-xl bg-white/40 backdrop-blur border border-stone-200/40 p-4 shadow-sm">
                         <div className="flex items-start gap-3 text-left">
-                            <Heart className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                            <Heart className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
                             <div className="text-xs text-stone-500">
-                                <p className="font-medium text-stone-700 mb-1">Lưu ý:</p>
-                                <ul className="space-y-1">
+                                <p className="font-semibold text-stone-700 mb-1.5">Lưu ý</p>
+                                <ul className="space-y-1 list-disc list-inside">
                                     {notes.map((note, i) => (
                                         <li key={i}>{note}</li>
                                     ))}
                                 </ul>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-            )}
+                    </div>
+                )}
+            </div>
         </div>
+    );
+}
+
+// ── Form Card Component ──
+function FormCard({ rt, onClick }: { rt: RegistrationType; onClick: () => void }) {
+    return (
+        <button
+            onClick={onClick}
+            className="w-full group flex items-center gap-3.5 p-4 rounded-xl bg-white/70 backdrop-blur border border-stone-200/50 shadow-sm hover:shadow-md hover:border-amber-300/60 hover:bg-white/90 transition-all text-left"
+        >
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/30 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform">
+                {rt.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="font-semibold text-stone-800 text-sm truncate">{rt.label}</p>
+                {rt.description && (
+                    <p className="text-xs text-stone-400 truncate">{rt.description}</p>
+                )}
+            </div>
+            <ArrowRight className="w-4 h-4 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+        </button>
     );
 }
