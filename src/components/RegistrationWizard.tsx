@@ -35,8 +35,22 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
     onSubmit: () => void;
     onBack: () => void;
 }) {
+    const [confirmed, setConfirmed] = useState(false);
+
+    // Format display value
+    const fmt = (val: unknown): string => {
+        if (val === true) return 'Có';
+        if (val === false) return 'Không';
+        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'string') return (val as string[]).join(', ');
+        return String(val || '');
+    };
+
+    // Get label, never show raw key
+    const getLabel = (key: string) => fieldLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
     return (
         <div className="animate-slide-in">
+            {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                     <CheckCircle className="w-5 h-5 text-green-600" />
@@ -47,89 +61,158 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
                 </div>
             </div>
 
-            <Card className="mb-3">
-                <CardHeader className="pb-1 px-3 pt-3">
-                    <CardTitle className="text-xs text-stone-400 uppercase">Loại đăng ký</CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-1">
-                    <p className="text-sm font-medium text-amber-700">{registrationLabel}</p>
+            {/* Registration type */}
+            <Card className="mb-3 border-amber-200 bg-amber-50/30">
+                <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                    <span className="text-xl">📋</span>
+                    <div>
+                        <p className="text-[10px] uppercase tracking-wider text-amber-500 font-medium">Loại đăng ký</p>
+                        <p className="text-sm font-semibold text-amber-800">{registrationLabel}</p>
+                    </div>
                 </CardContent>
             </Card>
 
+            {/* Applicant info */}
             <Card className="mb-3">
-                <CardHeader className="pb-1 px-3 pt-3">
-                    <CardTitle className="text-xs text-stone-400 uppercase">Người đăng ký</CardTitle>
+                <CardHeader className="pb-1 pt-3 px-3 sm:px-4 flex-row items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm">👤</span>
+                        <CardTitle className="text-xs text-stone-400 uppercase tracking-wide">Người đăng ký</CardTitle>
+                    </div>
                 </CardHeader>
-                <CardContent className="px-3 pb-3 pt-1">
-                    <p className="text-sm font-medium">{applicant.tinChu} • {applicant.phone}</p>
-                    {applicant.to && <p className="text-xs text-stone-500">{applicant.to}</p>}
+                <CardContent className="px-3 sm:px-4 pb-3 pt-1">
+                    <p className="text-sm font-semibold text-stone-800">{applicant.tinChu}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
+                        <span className="text-xs text-stone-500">📱 {applicant.phone}</span>
+                        {applicant.to && <span className="text-xs text-stone-500">🏠 {applicant.to}</span>}
+                    </div>
                 </CardContent>
             </Card>
 
+            {/* Form details */}
             <Card className="mb-3">
-                <CardHeader className="pb-1 px-3 pt-3 flex flex-row items-center justify-between">
-                    <CardTitle className="text-xs text-stone-400 uppercase">Chi tiết đăng ký</CardTitle>
-                    <Button variant="ghost" size="sm" onClick={onEdit} className="h-6 text-xs gap-1">
-                        <Edit2 className="w-3 h-3" /> Sửa
+                <CardHeader className="pb-1 pt-3 px-3 sm:px-4 flex-row items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm">📝</span>
+                        <CardTitle className="text-xs text-stone-400 uppercase tracking-wide">Chi tiết đăng ký</CardTitle>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={onEdit} className="h-7 text-xs gap-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50">
+                        <Edit2 className="w-3 h-3" /> Chỉnh sửa
                     </Button>
                 </CardHeader>
-                <CardContent className="px-3 pb-3 pt-1 space-y-1">
+                <CardContent className="px-3 sm:px-4 pb-3 pt-2 space-y-3">
                     {Object.entries(formData).map(([key, value]) => {
                         if (value === undefined || value === null || value === '' || value === false) return null;
                         if (Array.isArray(value) && value.length === 0) return null;
-                        const label = fieldLabels[key] || key;
+                        const label = getLabel(key);
 
-                        // Group data: array of objects
+                        // Group data: array of objects → render as numbered cards
                         if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
                             const items = value as Record<string, unknown>[];
                             return (
                                 <div key={key} className="space-y-2">
-                                    <span className="text-stone-500 text-sm">{label}:</span>
+                                    <p className="text-xs font-semibold text-stone-600 uppercase tracking-wide flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+                                        {label}
+                                        <span className="text-[10px] font-normal text-stone-400">({items.length})</span>
+                                    </p>
                                     {items.map((item, idx) => (
-                                        <div key={idx} className="ml-3 pl-3 border-l-2 border-amber-200 text-sm space-y-0.5">
-                                            <span className="text-xs font-medium text-amber-600">#{idx + 1}</span>
-                                            {Object.entries(item).map(([subKey, subVal]) => {
-                                                if (!subVal || subVal === '') return null;
-                                                const subLabel = fieldLabels[`${key}.${subKey}`] || subKey;
-                                                return (
-                                                    <div key={subKey} className="flex">
-                                                        <span className="text-stone-500 mr-2">{subLabel}:</span>
-                                                        <span className="text-stone-800 font-medium">
-                                                            {Array.isArray(subVal) ? (subVal as string[]).join(', ') : String(subVal)}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
+                                        <div key={idx} className="bg-stone-50 rounded-lg p-3 border border-stone-100">
+                                            <div className="flex items-center gap-2 mb-1.5">
+                                                <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                                                    {idx + 1}
+                                                </span>
+                                                <span className="text-xs text-stone-400">{label} #{idx + 1}</span>
+                                            </div>
+                                            <div className="space-y-1 ml-7">
+                                                {Object.entries(item).map(([subKey, subVal]) => {
+                                                    if (!subVal || subVal === '') return null;
+                                                    const subLabel = fieldLabels[`${key}.${subKey}`] || getLabel(subKey);
+                                                    return (
+                                                        <div key={subKey} className="text-sm">
+                                                            <span className="text-stone-500 text-xs">{subLabel}</span>
+                                                            <p className="text-stone-800 font-medium leading-snug break-words">
+                                                                {fmt(subVal)}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             );
                         }
 
+                        // Multichoice: array of strings
+                        if (Array.isArray(value)) {
+                            return (
+                                <div key={key}>
+                                    <p className="text-xs text-stone-500 mb-1">{label}</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {(value as string[]).map((v, i) => (
+                                            <span key={i} className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2.5 py-0.5">
+                                                ✓ {v}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        // Boolean
+                        if (value === true) {
+                            return (
+                                <div key={key} className="flex items-center gap-2 text-sm">
+                                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    <span className="text-stone-700">{label}</span>
+                                </div>
+                            );
+                        }
+
+                        // Regular field
                         return (
-                            <div key={key} className="flex text-sm">
-                                <span className="text-stone-500 mr-2">{label}:</span>
-                                <span className="text-stone-800 font-medium">
-                                    {value === true ? 'Có' : Array.isArray(value) ? (value as string[]).join(', ') : String(value)}
-                                </span>
+                            <div key={key} className="text-sm">
+                                <p className="text-xs text-stone-500">{label}</p>
+                                <p className="text-stone-800 font-medium break-words whitespace-pre-line">{fmt(value)}</p>
                             </div>
                         );
                     })}
                 </CardContent>
             </Card>
 
+            {/* Confirm checkbox */}
+            <Card className="mb-4 border-green-200 bg-green-50/30">
+                <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-start gap-3">
+                        <input
+                            type="checkbox"
+                            id="dynamic-confirm"
+                            checked={confirmed}
+                            onChange={(e) => setConfirmed(e.target.checked)}
+                            className="w-4 h-4 rounded border-stone-300 text-green-600 focus:ring-green-500 mt-0.5 flex-shrink-0"
+                        />
+                        <label htmlFor="dynamic-confirm" className="text-sm text-stone-600 leading-snug cursor-pointer">
+                            Tôi đã kiểm tra lại toàn bộ thông tin và xác nhận gửi đăng ký.
+                        </label>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Error */}
             {submitError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600 flex gap-2 items-start mb-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-red-600 flex gap-2 items-start mb-4">
                     <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    {submitError}
+                    <span>{submitError}</span>
                 </div>
             )}
 
+            {/* Actions */}
             <div className="flex gap-3 pt-2">
                 <Button variant="outline" onClick={onBack} className="flex-1 gap-2">
                     <ArrowLeft className="w-4 h-4" /> Quay lại
                 </Button>
-                <Button onClick={onSubmit} disabled={isSubmitting} className="flex-1 gap-2">
+                <Button onClick={onSubmit} disabled={!confirmed || isSubmitting} className="flex-1 gap-2">
                     {isSubmitting ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Đang gửi...</>
                     ) : (
@@ -140,6 +223,7 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
         </div>
     );
 }
+
 
 interface WizardProps {
     initialRegType?: RegistrationType;
