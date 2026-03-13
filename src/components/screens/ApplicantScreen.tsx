@@ -48,7 +48,7 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
                 </div>
                 <div>
                     <h2 className="text-xl font-bold text-stone-800">Thông tin người đăng ký</h2>
-                    <p className="text-sm text-stone-500">Bước 2 — Nhập thông tin Tín chủ</p>
+                    <p className="text-sm text-stone-500">Nhập thông tin Tín chủ / Phật tử</p>
                 </div>
             </div>
 

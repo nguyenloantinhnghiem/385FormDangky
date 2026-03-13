@@ -415,7 +415,7 @@ export default function DynamicFormScreen({ formType, formLabel, defaultValues, 
         return (
             <div className="text-center py-16">
                 <p className="text-stone-500">Chưa có trường nào cho form này.</p>
-                <p className="text-xs text-stone-400 mt-1">Admin vui lòng thêm fields vào tab &quot;form_fields&quot; trong Google Sheet</p>
+                <p className="text-xs text-stone-400 mt-1">Vui lòng liên hệ quản trị viên để cấu hình form này.</p>
                 <Button variant="outline" onClick={onBack} className="mt-4">Quay lại</Button>
             </div>
         );

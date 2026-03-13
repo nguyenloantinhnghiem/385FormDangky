@@ -28,7 +28,7 @@ export default function SuccessScreen({ submissionCode, onNewRegistration }: Suc
             </div>
 
             <h2 className="text-2xl font-bold text-stone-800 mb-2">Đăng ký thành công!</h2>
-            <p className="text-stone-500 mb-6">Cảm ơn bạn đã đăng ký cầu siêu.</p>
+            <p className="text-stone-500 mb-6">Cảm ơn bạn đã đăng ký. Thông tin đã được ghi nhận.</p>
 
             <Card className="w-full max-w-sm mb-6">
                 <CardContent className="p-4 text-center">
