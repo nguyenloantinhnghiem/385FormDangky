@@ -399,7 +399,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                         <h1 className="text-sm font-bold text-amber-600">
                             {registrationType?.label || 'Đăng Ký'}
                         </h1>
-                        {ceremonyType && (
+                        {ceremonyType && !isDynamic && (
                             <Badge variant="outline" className="text-xs">
                                 {CEREMONY_MAP.get(ceremonyType)?.shortLabel}
                             </Badge>
