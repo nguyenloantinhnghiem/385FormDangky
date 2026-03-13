@@ -3,7 +3,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { CEREMONY_MAP } from '@/config/categories';
 import { generateSubmissionCode } from '@/lib/utils/submission-code';
-import { appendSubmission, appendSubmissionItems, appendAuditLog, appendSummaryRow, getNextSTT } from '@/lib/sheets/helpers';
+import { appendSubmission, appendSubmissionItems, appendAuditLog, appendSummaryRow, getNextSTT, appendToFormSheet } from '@/lib/sheets/helpers';
 
 interface NguoiMat { hoTen: string; ngayMat?: string; tho?: string; anTangTai?: string; }
 interface NghiepItem { moTa: string; }
@@ -219,23 +219,79 @@ export async function submitRegistration(payload: SubmitPayload): Promise<Submit
 
         const categorySet = new Set(itemRows.map((r) => r.category_label));
 
-        // 1. Write to summary sheet (formatted output like sample)
+        const ceremonyLabel = ceremony?.label || ceremonyType;
+
+        // 1. Write to Tổng hợp đăng ký (master summary)
         const stt = await getNextSTT();
         await appendSummaryRow([
             String(stt),
-            ceremony?.label || ceremonyType,
+            ceremonyLabel,
             applicant.tinChu,
             "'" + applicant.phone,
             applicant.to || '',
             formattedText,
         ]);
 
-        // 2. Write structured submission row
+        // 2. Write to separate KQ_Cầu Siêu sheet
+        const cauSieuData: Record<string, unknown> = {};
+        const cauSieuConfigs: Record<string, { label: string; separateColumn: boolean }> = {};
+
+        // Ceremony type
+        cauSieuData['loai_le'] = ceremonyLabel;
+        cauSieuConfigs['loai_le'] = { label: 'Loại lễ', separateColumn: true };
+
+        // HL trong 49 ngày
+        const hlTrong = (formData.hlTrong49 || []).filter(n => n.hoTen?.trim());
+        if (hlTrong.length > 0) {
+            cauSieuData['hl_trong_49'] = hlTrong.map((n, i) =>
+                `${i+1}. ${n.hoTen} — Mất: ${n.ngayMat||'?'}, Thọ: ${n.tho||'?'}, An táng: ${n.anTangTai||'?'}`
+            ).join('\n');
+            cauSieuConfigs['hl_trong_49'] = { label: 'HL trong 49 ngày', separateColumn: true };
+        }
+
+        // HL ngoài 49 ngày
+        const hlNgoai = (formData.hlNgoai49 || []).filter(n => n.hoTen?.trim());
+        if (hlNgoai.length > 0) {
+            cauSieuData['hl_ngoai_49'] = hlNgoai.map((n, i) =>
+                `${i+1}. ${n.hoTen} — Mất: ${n.ngayMat||'?'}, Thọ: ${n.tho||'?'}, An táng: ${n.anTangTai||'?'}`
+            ).join('\n');
+            cauSieuConfigs['hl_ngoai_49'] = { label: 'HL ngoài 49 ngày', separateColumn: true };
+        }
+
+        // Bài 8
+        const hasBai8Data = formData.bai8_cungDuong === 'co' || formData.bai8_hlGiaTien || formData.bai8_hlTrenDat
+            || (formData.bai8_danhSachNghiep && formData.bai8_danhSachNghiep.filter(n => n.moTa?.trim()).length > 0);
+        if (hasBai8Data) {
+            const parts: string[] = [];
+            if (formData.bai8_cungDuong === 'co') parts.push('Cúng dường chư Thiên');
+            if (formData.bai8_hlGiaTien) parts.push('HL gia tiên');
+            if (formData.bai8_hlTrenDat) parts.push('HL trên đất');
+            for (const n of formData.bai8_danhSachNghiep || []) { if (n.moTa?.trim()) parts.push(n.moTa); }
+            cauSieuData['bai_8'] = parts.join('\n');
+            cauSieuConfigs['bai_8'] = { label: 'Tâm linh bài 8', separateColumn: true };
+        }
+
+        // Tâm linh khác
+        const tlKhac = (formData.tamLinhKhac || []).filter(n => n.moTa?.trim());
+        if (tlKhac.length > 0) {
+            cauSieuData['tam_linh_khac'] = tlKhac.map(n => n.moTa).join('\n');
+            cauSieuConfigs['tam_linh_khac'] = { label: 'Tâm linh khác', separateColumn: true };
+        }
+
+        // Ghi chú
+        if (applicant.notes?.trim()) {
+            cauSieuData['ghi_chu'] = applicant.notes;
+            cauSieuConfigs['ghi_chu'] = { label: 'Ghi chú', separateColumn: false };
+        }
+
+        await appendToFormSheet('Cầu Siêu', applicant, cauSieuData, cauSieuConfigs);
+
+        // 3. Write structured submission row
         await appendSubmission({
             submission_id: submissionId, submission_code: submissionCode,
             created_at: now, updated_at: now, status: 'submitted',
             ceremony_type: ceremonyType,
-            ceremony_label: ceremony?.label || ceremonyType,
+            ceremony_label: ceremonyLabel,
             applicant_name: applicant.tinChu, applicant_phone: applicant.phone,
             applicant_dao_trang: applicant.daoTrang || '',
             applicant_to: applicant.to || '',
@@ -245,14 +301,14 @@ export async function submitRegistration(payload: SubmitPayload): Promise<Submit
             source: 'webapp', notes: applicant.notes || '',
         });
 
-        // 3. Write structured item rows
+        // 4. Write structured item rows
         await appendSubmissionItems(itemRows);
 
-        // 4. Audit log
+        // 5. Audit log
         await appendAuditLog({
             log_id: uuidv4(), submission_id: submissionId,
             action: 'submit', created_at: now,
-            detail: `Submitted ${itemRows.length} items via webapp. Ceremony: ${ceremony?.label}`,
+            detail: `Đăng ký ${itemRows.length} mục — ${ceremonyLabel}`,
         });
 
         return { success: true, code: submissionCode };
