@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CEREMONY_MAP } from '@/config/categories';
 import { submitRegistration } from '@/actions/submit';
 import { submitDynamicRegistration } from '@/actions/submit-dynamic';
@@ -145,6 +146,8 @@ interface WizardProps {
 }
 
 export default function RegistrationWizard({ initialRegType }: WizardProps) {
+    const router = useRouter();
+
     // Determine the starting screen based on initialRegType
     const getInitialScreen = (): ScreenName => {
         if (!initialRegType) return 'landing';
@@ -166,6 +169,15 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
     // Form key for draft isolation
     const formKey = registrationType?.key;
+
+    // Navigate home: if direct link → go to /, else show landing
+    const goHome = useCallback(() => {
+        if (initialRegType) {
+            router.push('/');
+        } else {
+            setScreen('landing');
+        }
+    }, [initialRegType, router]);
 
     // On direct link: clear old draft for this form to start fresh
     useEffect(() => {
@@ -412,21 +424,21 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                 {screen === 'lookup' && (
                     <LookupScreen
                         onSelectPast={handleSelectPast}
-                        onBack={() => goTo('landing')}
+                        onBack={goHome}
                     />
                 )}
                 {screen === 'ceremony_select' && (
                     <CeremonySelectScreen
                         selected={ceremonyType}
                         onSelect={handleCeremonySelect}
-                        onBack={() => goTo('landing')}
+                        onBack={goHome}
                     />
                 )}
                 {screen === 'applicant' && (
                     <ApplicantScreen
                         defaultValues={applicant}
                         onNext={handleApplicantNext}
-                        onBack={() => goTo(isDynamic ? 'landing' : 'ceremony_select')}
+                        onBack={() => isDynamic ? goHome() : goTo('ceremony_select')}
                     />
                 )}
                 {screen === 'registration_form' && !isDynamic && (
