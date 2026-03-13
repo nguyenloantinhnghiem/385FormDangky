@@ -2,15 +2,17 @@
 
 Hệ thống đăng ký trực tuyến, tuỳ biến hoàn toàn qua **Google Sheet** — không cần sửa code.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Hoanq1003/FormDangky&env=GOOGLE_CLIENT_EMAIL,GOOGLE_PRIVATE_KEY,GOOGLE_SPREADSHEET_ID&envDescription=Cần%203%20biến%20từ%20Google%20Cloud%20%2B%20Sheet.%20Xem%20hướng%20dẫn%20README.&project-name=form-dang-ky)
+
 ## ✨ Tính năng chính
 
 - **Nhiều loại form đăng ký** — mỗi form là 1 link riêng (`/dang-ky/{mã}`)
 - **Phân nhóm cha-con** — VD: "An vị lô hương" → click vào chọn trường hợp
-- **7 loại trường nhập liệu:** text, textarea, select, checkbox, multichoice, number, repeatable
+- **7 loại trường nhập liệu:** text, textarea, select, checkbox, multichoice, number, group (lặp lại)
 - **Kết quả tách sheet riêng** — mỗi form → 1 tab `KQ_{tên form}`
 - **Tuỳ chọn cột riêng/gom chung** — admin chọn trường nào ra cột riêng
-- **Mobile-first**, responsive, auto-save draft
-- **Tra cứu đăng ký lại** bằng SĐT
+- **Mobile-first**, responsive
+- **Tra cứu đăng ký lại** bằng SĐT + lọc theo loại form
 - **Video hướng dẫn** nhúng trên trang chủ
 
 ## 🛠 Tech Stack
@@ -18,183 +20,148 @@ Hệ thống đăng ký trực tuyến, tuỳ biến hoàn toàn qua **Google Sh
 - **Next.js 16** (App Router) + **TypeScript**
 - **Google Sheets API** (database)
 - **Vercel** (hosting miễn phí)
-- **shadcn/ui** + Vanilla CSS
+- **shadcn/ui** + Tailwind CSS
 
 ---
 
-# 📖 HƯỚNG DẪN NHÂN BẢN DỰ ÁN
+# 📖 NHÂN BẢN DỰ ÁN — 4 BƯỚC
 
-> Dành cho người muốn tạo hệ thống đăng ký riêng cho đạo tràng/nhóm/tổ chức của mình.
+> ⏱ Thời gian: ~15 phút. Cần tạo **3 tài khoản miễn phí**.
 
-## Bước 1: Fork/Clone code
+## 📋 Tài khoản cần có
 
-```bash
-# Cách 1: Fork trên GitHub
-# Vào https://github.com/Hoanq1003/FormDangky → Fork
+| # | Tài khoản | Link đăng ký | Dùng để |
+|---|---|---|---|
+| 1 | **Google** (Gmail) | [accounts.google.com](https://accounts.google.com) | Tạo Google Sheet + Service Account |
+| 2 | **GitHub** | [github.com/signup](https://github.com/signup) | Fork code dự án |
+| 3 | **Vercel** | [vercel.com/signup](https://vercel.com/signup) | Hosting miễn phí (đăng nhập bằng GitHub) |
 
-# Cách 2: Clone trực tiếp
-git clone https://github.com/Hoanq1003/FormDangky.git my-form
-cd my-form
-npm install
-```
+---
 
-## Bước 2: Tạo Google Cloud Project + Service Account
+## Bước 1: Fork code (2 phút)
 
-### 2.1 Tạo Project
-1. Vào [Google Cloud Console](https://console.cloud.google.com/)
+1. Đăng nhập **GitHub**
+2. Vào 👉 [github.com/Hoanq1003/FormDangky](https://github.com/Hoanq1003/FormDangky)
+3. Nhấn nút **Fork** (góc trên phải) → **Create fork**
+4. Bạn đã có bản sao code riêng!
+
+## Bước 2: Tạo Google Sheet + Service Account (10 phút)
+
+### 2.1 Bật Google Sheets API
+1. Vào 👉 [console.cloud.google.com](https://console.cloud.google.com/)
 2. Tạo project mới → đặt tên (VD: `form-dang-ky`)
-3. Bật **Google Sheets API**: Menu → APIs & Services → Library → tìm "Google Sheets API" → **Enable**
+3. Menu → **APIs & Services** → **Library** → tìm "Google Sheets API" → **Enable**
 
-### 2.2 Tạo Service Account (tài khoản máy)
-1. Menu → IAM & Admin → Service Accounts → **Create Service Account**
-2. Đặt tên: `sheets-writer`
-3. Bỏ qua vai trò → Done
-4. Click vào tài khoản vừa tạo → tab **Keys** → Add Key → Create New Key → **JSON**
-5. **Tải file JSON về** — file này chứa `client_email` và `private_key`
+### 2.2 Tạo Service Account
+1. Menu → **IAM & Admin** → **Service Accounts** → **Create Service Account**
+2. Đặt tên: `sheets-writer` → Done
+3. Click vào tài khoản vừa tạo → tab **Keys** → **Add Key** → **Create New Key** → **JSON**
+4. 📥 **Tải file JSON** − mở file, copy 2 giá trị:
+   - `client_email` → VD: `sheets-writer@project.iam.gserviceaccount.com`
+   - `private_key` → chuỗi dài bắt đầu `-----BEGIN PRIVATE KEY-----`
 
-## Bước 3: Tạo Google Spreadsheet
+### 2.3 Tạo Google Spreadsheet
+1. Vào 👉 [sheets.google.com](https://sheets.google.com/) → tạo file mới
+2. Copy **ID từ URL**: `https://docs.google.com/spreadsheets/d/`**`ID_Ở_ĐÂY`**`/edit`
+3. **Share** cho Service Account: nhấn Share → paste `client_email` → quyền **Editor** → Send
 
-### 3.1 Tạo Spreadsheet mới
-1. Vào [Google Sheets](https://sheets.google.com/) → tạo file mới
-2. Copy **Spreadsheet ID** từ URL: `https://docs.google.com/spreadsheets/d/SPREADSHEET_ID_Ở_ĐÂY/edit`
-
-### 3.2 Share cho Service Account
-1. Mở file JSON đã tải → copy giá trị `client_email` (VD: `sheets-writer@project.iam.gserviceaccount.com`)
-2. Trong Google Sheet → **Share** → paste email đó → quyền **Editor** → Send
-
-### 3.3 Tạo các tab (tự động hoặc thủ công)
-
-**Cách nhanh — chạy script tự động:**
+### 2.4 Tạo các tab tự động
 ```bash
-# Sau khi cấu hình .env.local (bước 4), chạy:
-npx tsx scripts/standardize-headers.ts
-```
+# Clone code về máy (chỉ cần làm 1 lần)
+git clone https://github.com/YOUR_USERNAME/FormDangky.git
+cd FormDangky
+npm install
 
-**Cách thủ công — tạo 7 tab với tên chính xác:**
-
-| Tab | Mục đích |
-|---|---|
-| `settings` | Cài đặt chung (tiêu đề, video, đóng/mở đăng ký) |
-| `registration_types` | Các loại form đăng ký |
-| `form_fields` | Các trường của mỗi form |
-| `submissions` | Dữ liệu đăng ký (hệ thống ghi) |
-| `submission_items` | Chi tiết từng mục (hệ thống ghi) |
-| `audit_logs` | Lịch sử thao tác (hệ thống ghi) |
-| `Tổng hợp đăng ký` | Tổng hợp dễ đọc (hệ thống ghi) |
-
-## Bước 4: Cấu hình biến môi trường
-
-```bash
+# Tạo file .env.local
 cp .env.example .env.local
+# → Mở .env.local, điền 3 giá trị từ bước 2.2 + 2.3
+
+# Chạy script cài đặt tự động
+npx tsx scripts/setup-new-sheet.ts
 ```
 
-Mở `.env.local` và điền:
+> Script sẽ tự tạo 8 tab, ghi headers, và thêm form mẫu.
 
-```env
-GOOGLE_CLIENT_EMAIL=sheets-writer@your-project.iam.gserviceaccount.com
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-GOOGLE_SPREADSHEET_ID=abc123xyz
-ADMIN_PASSWORD=matkhau_admin
-```
+## Bước 3: Deploy lên Vercel (3 phút)
 
-> **Lưu ý:** `GOOGLE_PRIVATE_KEY` copy nguyên từ file JSON, giữ nguyên `\n`.
+**Cách 1: Nút bấm 1 click**
+- Nhấn nút **"Deploy with Vercel"** ở đầu trang GitHub
+- Điền 3 biến: `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_SPREADSHEET_ID`
+- Nhấn **Deploy** → chờ 1-2 phút
 
-## Bước 5: Chạy thử local
+**Cách 2: Kết nối GitHub**
+1. Vào [vercel.com](https://vercel.com/) → **Add New Project**
+2. Import repo `FormDangky` từ GitHub
+3. Thêm **Environment Variables** (3 biến như trên)
+4. **Deploy** → xong!
 
-```bash
-npm run dev
-# Mở http://localhost:3000
-```
+## Bước 4: Kiểm tra
 
-## Bước 6: Deploy lên Vercel (miễn phí)
+1. Mở link Vercel cho bạn (VD: `form-dang-ky.vercel.app`)
+2. Sẽ thấy trang chủ với form mẫu
+3. Thử đăng ký → kiểm tra dữ liệu trong Google Sheet
 
-1. Push code lên GitHub repository của bạn
-2. Vào [vercel.com](https://vercel.com/) → **Import Project** từ GitHub
-3. Thêm **Environment Variables** (giống `.env.local`):
-   - `GOOGLE_CLIENT_EMAIL`
-   - `GOOGLE_PRIVATE_KEY`
-   - `GOOGLE_SPREADSHEET_ID`
-   - `ADMIN_PASSWORD`
-4. Click **Deploy** → chờ 1-2 phút
-
-> Mỗi lần push code mới lên GitHub, Vercel sẽ tự deploy lại.
+🎉 **Xong! Hệ thống đã hoạt động.**
 
 ---
 
-# 🎨 HƯỚNG DẪN TUỲ BIẾN QUA GOOGLE SHEET
+# 🎨 TUỲ BIẾN QUA GOOGLE SHEET
 
-## Tab `settings` — Cài đặt chung
+> Không cần sửa code − chỉ sửa Google Sheet, web tự cập nhật.
 
-| Khoá cài đặt | Giá trị | Ý nghĩa |
+## Tab `cài_đặt` — Cài đặt chung
+
+| Khoá | Giá trị mẫu | Ý nghĩa |
 |---|---|---|
-| `landing_title` | Đăng Ký Cầu Siêu | Tiêu đề trang chủ |
-| `landing_subtitle` | Xem video hướng dẫn... | Phụ đề trang chủ |
-| `video_url` | https://youtube.com/embed/xxx | Link video hướng dẫn nhúng |
+| `landing_title` | 🙏 Hệ Thống Đăng Ký | Tiêu đề trang chủ |
+| `landing_subtitle` | Chọn loại đăng ký... | Phụ đề |
+| `video_url` | https://youtube.com/embed/xxx | Video hướng dẫn |
 | `registration_open` | TRUE / FALSE | Mở/đóng đăng ký |
-| `registration_close_message` | Đăng ký đã đóng... | Thông báo khi đóng |
-| `next_registration_date` | 15/04/2026 | Ngày mở đợt tiếp |
-| `landing_notes` | Dòng 1\nDòng 2 | Lưu ý trên trang chủ (mỗi dòng = 1 mục) |
+| `registration_close_message` | Đăng ký đã đóng | Thông báo khi đóng |
+| `landing_notes` | Dòng 1\nDòng 2 | Lưu ý trang chủ |
 
-## Tab `registration_types` — Các loại form
-
-| Cột | Ý nghĩa | VD |
-|---|---|---|
-| **A - Mã loại** | Mã để tạo link (không dấu) | `cau_sieu` |
-| **B - Tên hiển thị** | Tên button trên trang chủ | `Đăng ký Cầu Siêu` |
-| **C - Mô tả ngắn** | Dòng phụ dưới tên | `Đăng ký danh sách cầu siêu` |
-| **D - Icon** | Emoji | 🙏 |
-| **E - Đang mở** | TRUE/FALSE | `TRUE` |
-| **F - Thứ tự** | Số (nhỏ hiện trước) | `1` |
-| **G - Mã form** | Khớp với form_fields | `cau_sieu` |
-| **H - Thuộc nhóm cha** | Mã loại cha (trống = root) | *(trống)* hoặc `AVLH` |
-
-### Tạo loại đơn giản (1 dòng):
-```
-cau_sieu | Đăng ký Cầu Siêu | Mô tả | 🙏 | TRUE | 1 | cau_sieu |
-```
-
-### Tạo nhóm có trường hợp con (1 cha + N con):
-```
-AVLH     | Đăng ký AVLH      |       | 📋 | TRUE | 2 |          |         ← cha (Mã form TRỐNG)
-avlh_th1 | Trường hợp 1      |       | 🔥 | TRUE | 1 | avlh_th1 | AVLH    ← con
-avlh_th2 | Trường hợp 2      |       | 🔥 | TRUE | 2 | avlh_th2 | AVLH    ← con
-```
-
-> **Link trực tiếp:** `your-domain.vercel.app/dang-ky/{Mã loại}`
-
-## Tab `form_fields` — Các trường trong form
+## Tab `loại_đăng_ký` — Các loại form
 
 | Cột | Ý nghĩa | VD |
 |---|---|---|
-| **A - Mã form** | Khớp cột G của registration_types | `avlh_th1` |
-| **B - Nhóm** | Tên section gom trường | `Thông tin` |
-| **C - Mã trường** | Mã lưu dữ liệu (không dấu) | `hoTen` |
-| **D - Tên trường** | Nhãn hiển thị cho người dùng | `Họ tên` |
-| **E - Loại trường** | Kiểu input | `text` |
-| **F - Bắt buộc** | TRUE/FALSE | `TRUE` |
-| **G - Gợi ý nhập** | Placeholder | `VD: Nguyễn Văn A` |
-| **H - Các lựa chọn** | Dùng cho select/multichoice, ngăn `\|` | `A\|B\|C` |
-| **I - Thứ tự** | Số (nhỏ hiện trước) | `1` |
-| **J - Ghi chú trường** | Text nhỏ dưới input | `Theo âm lịch` |
-| **K - Cột riêng** | TRUE = cột riêng trong sheet KQ | `TRUE` |
+| **A** | Mã loại (không dấu) | `cau_sieu` |
+| **B** | Tên hiển thị | `Đăng ký Cầu Siêu` |
+| **C** | Mô tả ngắn | `Đăng ký danh sách cầu siêu` |
+| **D** | Icon | 🙏 |
+| **E** | Đang mở (TRUE/FALSE) | `TRUE` |
+| **F** | Thứ tự | `1` |
+| **G** | Mã form | `cau_sieu` |
+| **H** | Nhóm cha (trống = root) | *(trống)* |
 
-### Các loại trường hỗ trợ:
+## Tab `trường_biểu_mẫu` — Các trường form
 
-| Loại | Hiển thị | Cần cột H? |
+| Cột | Ý nghĩa | VD |
 |---|---|---|
-| `text` | Ô nhập 1 dòng | Không |
-| `textarea` | Ô nhập nhiều dòng | Không |
-| `number` | Ô nhập số | Không |
-| `select` | Dropdown (chọn 1) | ✅ VD: `Loại A\|Loại B` |
-| `multichoice` | Nhiều checkbox (chọn nhiều) | ✅ VD: `Phật\|Chư Thiên\|Gia tiên` |
-| `checkbox` | 1 ô check Có/Không | Không |
+| **A** | Mã form (khớp cột G bên trên) | `cau_sieu` |
+| **B** | Tên nhóm trường | `Thông tin` |
+| **C** | Mã trường | `hoTen` |
+| **D** | Tên trường (hiển thị) | `Họ tên` |
+| **E** | Loại trường | `text` |
+| **F** | Bắt buộc | `TRUE` |
+| **G** | Gợi ý nhập | `VD: Nguyễn Văn A` |
+| **H** | Các lựa chọn (ngăn bởi \|) | `A\|B\|C` |
+| **I** | Thứ tự | `1` |
+| **J** | Ghi chú | `Theo âm lịch` |
+| **K** | Cột riêng trong KQ | `TRUE` |
+| **L** | Điều kiện hiện | `nghiep_chon=X` |
 
-### Tuỳ chọn kết quả Sheet (cột K):
+### Loại trường hỗ trợ:
 
-| K = | Kết quả trong sheet `KQ_{form}` |
+| Loại | Hiển thị |
 |---|---|
-| **TRUE** | Trường → cột riêng (VD: "Họ tên" 1 cột) |
-| **FALSE**/trống | Trường → gom vào cột "Chi tiết" |
+| `text` | Ô nhập 1 dòng |
+| `textarea` | Ô nhập nhiều dòng |
+| `number` | Ô nhập số |
+| `select` | Dropdown chọn 1 (cần cột H) |
+| `radio` | Nút chọn 1 (cần cột H) |
+| `multichoice` | Checkbox chọn nhiều (cần cột H) |
+| `checkbox` | 1 ô check Có/Không |
+| `group` | Nhóm lặp lại (thêm/bớt được) |
 
 ---
 
@@ -210,7 +177,8 @@ src/
 │   ├── settings.ts             # Đọc cấu hình từ Sheet
 │   ├── form-fields.ts          # Đọc trường form từ Sheet
 │   ├── submit.ts               # Gửi đăng ký Cầu Siêu
-│   └── submit-dynamic.ts       # Gửi các form tuỳ biến
+│   ├── submit-dynamic.ts       # Gửi các form tuỳ biến
+│   └── lookup.ts               # Tra cứu SĐT
 ├── components/
 │   ├── RegistrationWizard.tsx   # Điều phối toàn bộ flow
 │   └── screens/                 # Các màn hình wizard
@@ -218,27 +186,27 @@ src/
 │   ├── client.ts               # Kết nối Google Sheets
 │   └── helpers.ts              # Đọc/ghi dữ liệu
 └── scripts/
-    └── standardize-headers.ts  # Chuẩn hoá headers tiếng Việt
+    └── setup-new-sheet.ts      # Cài đặt Sheet tự động
 ```
 
 ---
 
 # ❓ FAQ
 
-**Q: Thêm form mới có cần sửa code không?**
-→ **Không.** Chỉ thêm dòng trong Google Sheet `registration_types` + `form_fields`.
+**Thêm form mới có cần sửa code không?**
+→ **Không.** Chỉ thêm dòng trong Sheet `loại_đăng_ký` + `trường_biểu_mẫu`.
 
-**Q: Mỗi form có link riêng không?**
-→ **Có.** Link = `your-domain/dang-ky/{Mã loại}` (cột A của registration_types).
+**Mỗi form có link riêng không?**
+→ **Có.** Link = `your-domain/dang-ky/{Mã loại}`.
 
-**Q: Kết quả lưu ở đâu?**
-→ Mỗi form → tab `KQ_{tên form}` trong Google Sheet. Song song đó có `Tổng hợp đăng ký`.
+**Kết quả lưu ở đâu?**
+→ Mỗi form → tab `KQ_{tên form}` trong Google Sheet.
 
-**Q: Đổi text, icon, mô tả trang chủ?**
-→ Sửa tab `settings` trong Sheet. Web tự cập nhật, không cần deploy lại.
+**Đổi text, icon, mô tả?**
+→ Sửa tab `cài_đặt` hoặc `loại_đăng_ký`, web tự cập nhật.
 
-**Q: Nhiều người dùng chung hệ thống?**
-→ Mỗi người tạo Google Sheet riêng, cấu hình biến môi trường riêng, deploy Vercel riêng.
+**Nhiều người dùng hệ thống?**
+→ Mỗi người Fork → tạo Sheet riêng → Deploy Vercel riêng. Hoàn toàn độc lập.
 
 ---
 
