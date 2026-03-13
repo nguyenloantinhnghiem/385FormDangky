@@ -247,7 +247,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "'registration_types'!A:H",
+            range: "'loại_đăng_ký'!A:H",
         });
         const rows = (res.data.values as string[][]) || [];
         if (rows.length < 2) {

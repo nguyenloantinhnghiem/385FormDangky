@@ -30,7 +30,7 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "'form_fields'!A:L",
+            range: "'trường_biểu_mẫu'!A:L",
         });
         const rows = (res.data.values as string[][]) || [];
         if (rows.length < 2) return [];

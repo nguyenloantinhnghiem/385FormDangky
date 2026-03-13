@@ -1,6 +1,7 @@
 'use server';
 
 import { listSubmissions, listSubmissionItems } from '@/lib/sheets/helpers';
+import { getRegistrationTypes, type RegistrationType } from '@/actions/settings';
 
 interface LookupResult {
     submissions: {
@@ -14,6 +15,7 @@ interface LookupResult {
         applicantTo: string;
         totalItems: string;
         categoriesText: string;
+        registrationLabel: string;
         itemsData: {
             categoryKey: string;
             categoryLabel: string;
@@ -22,6 +24,7 @@ interface LookupResult {
             payloadJson: string;
         }[];
     }[];
+    registrationTypes: RegistrationType[];
 }
 
 // Helper: get value from row object trying multiple possible header names
@@ -32,7 +35,7 @@ function get(row: Record<string, string>, ...keys: string[]): string {
     return '';
 }
 
-export async function lookupByPhone(phone: string): Promise<LookupResult> {
+export async function lookupByPhone(phone: string, formTypeFilter?: string): Promise<LookupResult> {
     try {
         const normalizePhone = (p: string) => {
             let clean = p.replace(/\s+/g, '').replace(/^'/, '').replace(/^\+84/, '0');
@@ -41,13 +44,25 @@ export async function lookupByPhone(phone: string): Promise<LookupResult> {
         };
 
         const searchPhone = normalizePhone(phone);
-        const allSubmissions = await listSubmissions();
-        const allItems = await listSubmissionItems();
+        const [allSubmissions, allItems, regTypes] = await Promise.all([
+            listSubmissions(),
+            listSubmissionItems(),
+            getRegistrationTypes(),
+        ]);
 
-        const matched = allSubmissions.filter((s) => {
+        let matched = allSubmissions.filter((s) => {
             const sPhone = normalizePhone(get(s, 'SĐT', 'Số điện thoại', 'applicant_phone'));
             return sPhone === searchPhone;
         });
+
+        // Filter by form type if specified
+        if (formTypeFilter) {
+            matched = matched.filter((s) => {
+                const ct = get(s, 'Loại lễ', 'Loại cầu siêu', 'ceremony_type', 'Loại đăng ký');
+                const cl = get(s, 'Tên loại lễ', 'Tên loại cầu siêu', 'ceremony_label', 'Tên đăng ký');
+                return ct === formTypeFilter || cl === formTypeFilter;
+            });
+        }
 
         const submissions = matched.map((s) => {
             const subId = get(s, 'Mã đăng ký', 'Mã đăng ký (ID)', 'submission_id');
@@ -72,13 +87,14 @@ export async function lookupByPhone(phone: string): Promise<LookupResult> {
                 applicantTo: get(s, 'Tổ', 'Thuộc tổ', 'applicant_to'),
                 totalItems: get(s, 'Số mục', 'Tổng số mục', 'total_items') || '0',
                 categoriesText: get(s, 'Danh mục', 'Danh sách loại mục', 'categories_text'),
+                registrationLabel: get(s, 'Tên loại lễ', 'Tên loại cầu siêu', 'ceremony_label') || get(s, 'Tên đăng ký'),
                 itemsData: items,
             };
         });
 
-        return { submissions };
+        return { submissions, registrationTypes: regTypes };
     } catch (err) {
         console.error('Lookup error:', err);
-        return { submissions: [] };
+        return { submissions: [], registrationTypes: [] };
     }
 }

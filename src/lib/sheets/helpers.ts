@@ -5,11 +5,11 @@ import type { SubmissionRow, SubmissionItemRow } from '@/types';
 // Sheet tab names — constants
 // ============================================================
 const SHEET = {
-    SETTINGS: 'settings',
-    CATEGORIES: 'categories',
-    SUBMISSIONS: 'submissions',
-    SUBMISSION_ITEMS: 'submission_items',
-    AUDIT_LOGS: 'audit_logs',
+    SETTINGS: 'cài_đặt',
+    CATEGORIES: 'danh_mục',
+    SUBMISSIONS: 'đăng_ký',
+    SUBMISSION_ITEMS: 'chi_tiết_đăng_ký',
+    AUDIT_LOGS: 'nhật_ký',
     SUMMARY: 'Tổng hợp đăng ký',
 } as const;
 
