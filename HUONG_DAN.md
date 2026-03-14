@@ -1,212 +1,298 @@
-# 📖 HƯỚNG DẪN NHÂN BẢN HỆ THỐNG ĐĂNG KÝ
+# 📖 HƯỚNG DẪN NHÂN BẢN HỆ THỐNG ĐĂNG KÝ (Windows)
 
-> ⏱ Thời gian: ~15 phút | Miễn phí 100% | Bản độc lập hoàn toàn
+> ⏱ Thời gian: ~15–20 phút | Miễn phí 100% | Bản độc lập hoàn toàn
+>
+> Hướng dẫn dành cho **Windows 10/11**. Nếu dùng macOS, xem phần cuối.
 
 ---
 
-## 📋 Cần tạo 3 tài khoản miễn phí
+## 📋 TỔNG QUAN
 
-| # | Tài khoản | Link đăng ký | Dùng để |
+Bạn sẽ tạo một hệ thống đăng ký riêng, gồm:
+- ✅ Website đăng ký trực tuyến (miễn phí mãi mãi)
+- ✅ Google Sheet lưu trữ dữ liệu (của bạn, do bạn quản lý)
+- ✅ Tuỳ biến form qua Google Sheet — không cần biết lập trình
+
+**Cần tạo 3 tài khoản miễn phí:**
+
+| # | Tài khoản | Đăng ký tại | Mục đích |
 |---|---|---|---|
-| 1 | **Google (Gmail)** | [accounts.google.com](https://accounts.google.com) | Lưu trữ dữ liệu |
-| 2 | **GitHub** | [github.com/signup](https://github.com/signup) | Lưu code |
-| 3 | **Vercel** | [vercel.com/signup](https://vercel.com/signup) | Chạy website |
+| 1 | **Google (Gmail)** | [accounts.google.com](https://accounts.google.com) | Lưu dữ liệu đăng ký |
+| 2 | **GitHub** | [github.com/signup](https://github.com/signup) | Lưu trữ mã nguồn |
+| 3 | **Vercel** | [vercel.com/signup](https://vercel.com/signup) | Chạy website (dùng GitHub đăng nhập) |
 
 ---
 
-## BƯỚC 1 — Cài đặt công cụ trên máy tính
+## BƯỚC 1 — Cài đặt phần mềm trên Windows
 
-### 🪟 Windows
+### 1a. Cài Node.js
 
-1. **Cài Node.js:**
-   - Vào 👉 [nodejs.org](https://nodejs.org/)
-   - Tải bản **LTS** (nút xanh lớn) → chạy file cài đặt → nhấn **Next** liên tục → **Install**
-   - Kiểm tra: mở **Command Prompt** (gõ `cmd` ở Start menu), gõ:
-     ```
-     node --version
-     ```
-     Nếu hiện `v20...` hoặc `v22...` là thành công
+1. Mở trình duyệt, vào 👉 **[nodejs.org](https://nodejs.org/)**
+2. Nhấn nút xanh lớn **"Download LTS"**
+3. Mở file `node-v...msi` vừa tải → nhấn **Next** → **Next** → ... → **Install** → **Finish**
+4. **Kiểm tra:** Nhấn phím `Win + R` → gõ `cmd` → Enter → gõ lệnh:
+   ```
+   node --version
+   ```
+   ✅ Nếu hiện `v20.x.x` hoặc `v22.x.x` là thành công
 
-2. **Cài Git:**
-   - Vào 👉 [git-scm.com/download/win](https://git-scm.com/download/win)
-   - Tải → cài đặt (nhấn **Next** liên tục → **Install**)
-   - Kiểm tra: mở lại **Command Prompt**, gõ:
-     ```
-     git --version
-     ```
+### 1b. Cài Git
 
-### 🍎 macOS
+1. Vào 👉 **[git-scm.com/download/win](https://git-scm.com/download/win)**
+2. Nhấn **"Click here to download"** → chạy file cài đặt
+3. Nhấn **Next** liên tục (giữ nguyên mặc định) → **Install** → **Finish**
+4. **Kiểm tra:** Mở lại **Command Prompt** (đóng cái cũ, mở cái mới), gõ:
+   ```
+   git --version
+   ```
+   ✅ Nếu hiện `git version 2.x.x` là thành công
 
-1. **Cài Node.js:**
-   - Vào 👉 [nodejs.org](https://nodejs.org/)
-   - Tải bản **LTS** → mở file `.pkg` → cài đặt
-   - Hoặc dùng Terminal:
-     ```bash
-     brew install node
-     ```
-   - Kiểm tra: mở **Terminal**, gõ:
-     ```bash
-     node --version
-     ```
-
-2. **Cài Git:**
-   - macOS thường đã có sẵn Git. Kiểm tra:
-     ```bash
-     git --version
-     ```
-   - Nếu chưa có, cài Xcode Command Line Tools:
-     ```bash
-     xcode-select --install
-     ```
+> ⚠️ **Quan trọng:** Sau khi cài xong, **đóng tất cả cửa sổ Command Prompt** rồi mở lại cửa sổ mới để hệ thống nhận được Node.js và Git.
 
 ---
 
 ## BƯỚC 2 — Fork code về GitHub của bạn
 
-1. Đăng nhập **GitHub**
-2. Mở 👉 [github.com/Hoanq1003/FormDangky](https://github.com/Hoanq1003/FormDangky)
-3. Nhấn nút **Fork** (góc trên phải) → **Create fork**
-4. ✅ Xong — bạn đã có bản code riêng tại `github.com/TEN_CUA_BAN/FormDangky`
+1. Đăng nhập vào 👉 **[github.com](https://github.com)**
+2. Mở link: 👉 **[github.com/Hoanq1003/FormDangky](https://github.com/Hoanq1003/FormDangky)**
+3. Nhấn nút **Fork** (góc trên bên phải, có biểu tượng nhánh cây)
+4. Trong trang "Create a new fork":
+   - **Owner**: chọn tên GitHub của bạn
+   - **Repository name**: giữ nguyên `FormDangky` hoặc đổi tên tuỳ ý
+5. Nhấn **Create fork**
+6. ✅ Chờ vài giây — bạn đã có bản code riêng tại `github.com/TEN_CUA_BAN/FormDangky`
 
 ---
 
-## BƯỚC 3 — Tạo Google Sheet + Service Account
+## BƯỚC 3 — Tạo Google Sheet + Kết nối API
 
 ### 3a. Tạo Google Cloud Project
-1. Vào 👉 [console.cloud.google.com](https://console.cloud.google.com/)
-2. Nhấn **Select a project** (trên cùng) → **New Project**
-3. Tên: `form-dang-ky` → nhấn **Create**
-4. Chờ tạo xong (10 giây)
+
+1. Vào 👉 **[console.cloud.google.com](https://console.cloud.google.com/)** (đăng nhập bằng Gmail)
+2. Nhấn vào ô **"Select a project"** hoặc **"Chọn dự án"** (thanh trên cùng)
+3. Nhấn **New Project** (góc trên phải popup)
+4. Đặt tên: `form-dang-ky` → nhấn **Create**
+5. Chờ 5–10 giây → nhấn lại **"Select a project"** → chọn `form-dang-ky`
 
 ### 3b. Bật Google Sheets API
-1. Menu trái ☰ → **APIs & Services** → **Library**
-2. Tìm: **Google Sheets API**
-3. Nhấn **Enable**
 
-### 3c. Tạo Service Account
-1. Menu trái ☰ → **IAM & Admin** → **Service Accounts**
+1. Nhấn menu ☰ (3 gạch ngang, góc trên trái) → **APIs & Services** → **Library**
+2. Trong ô tìm kiếm, gõ: **Google Sheets API**
+3. Nhấn vào kết quả **Google Sheets API**
+4. Nhấn nút xanh **Enable**
+5. ✅ Chờ vài giây — API đã bật
+
+### 3c. Tạo Service Account (tài khoản kết nối máy)
+
+1. Menu ☰ → **IAM & Admin** → **Service Accounts**
 2. Nhấn **+ Create Service Account**
-3. Tên: `sheets-writer` → nhấn **Done** (bỏ qua bước 2, 3)
-4. Nhấn vào dòng `sheets-writer` vừa tạo
-5. Tab **Keys** → **Add Key** → **Create New Key** → chọn **JSON** → **Create**
-6. 📥 **File JSON tự tải về máy** — giữ lại, **không chia sẻ cho ai!**
+3. Điền:
+   - **Service account name**: `sheets-writer`
+   - Bỏ qua phần còn lại → nhấn **Done**
+4. Trong danh sách, nhấn vào dòng **sheets-writer** vừa tạo
+5. Chuyển sang tab **Keys** (phía trên)
+6. Nhấn **Add Key** → **Create New Key**
+7. Chọn **JSON** → nhấn **Create**
+8. 📥 **File JSON tự tải về máy** (thường nằm trong thư mục `Downloads`)
 
-### 3d. Lấy thông tin từ file JSON
-Mở file JSON bằng Notepad (Windows) hoặc TextEdit (macOS), tìm:
+> ⚠️ File này chứa mật khẩu kết nối — **không chia sẻ cho ai, không đăng lên mạng!**
+
+### 3d. Mở file JSON — lấy 2 thông tin quan trọng
+
+Nhấn chuột phải vào file JSON → **Open with** → **Notepad** (Sổ tay)
+
+Tìm 2 dòng sau và **copy riêng từng giá trị** (không bao gồm dấu ngoặc kép):
+
 ```
-"client_email": "sheets-writer@xxx.iam.gserviceaccount.com"   ← COPY GIỮ LẠI (1)
-"private_key": "-----BEGIN PRIVATE KEY-----\n..."              ← COPY GIỮ LẠI (2)
+"client_email": "sheets-writer@form-dang-ky.iam.gserviceaccount.com"
 ```
+👆 Copy phần `sheets-writer@form-dang-ky.iam.gserviceaccount.com` → lưu lại, gọi là **(A)**
 
-### 3e. Tạo Google Spreadsheet
-1. Vào 👉 [sheets.google.com](https://sheets.google.com/) → Tạo bảng tính mới
-2. Copy **ID** từ URL:
+```
+"private_key": "-----BEGIN PRIVATE KEY-----\nMIIEv...rất dài...==\n-----END PRIVATE KEY-----\n"
+```
+👆 Copy TOÀN BỘ chuỗi từ `-----BEGIN` đến `-----\n` → lưu lại, gọi là **(B)**
+
+### 3e. Tạo Google Spreadsheet mới
+
+1. Vào 👉 **[sheets.google.com](https://sheets.google.com/)**
+2. Nhấn **+ Blank spreadsheet** (Bảng tính mới)
+3. Đặt tên tuỳ ý (VD: `Đăng ký đạo tràng ABC`)
+4. Nhìn lên thanh URL trình duyệt:
    ```
-   https://docs.google.com/spreadsheets/d/  ABC123XYZ  /edit
-                                             ↑ ĐÂY LÀ ID ← COPY GIỮ LẠI (3)
+   https://docs.google.com/spreadsheets/d/  1aBcDeFgHiJkLmNoPqRs  /edit
+                                             └──── ĐÂY LÀ ID ────┘
    ```
-3. Nhấn **Share** (góc trên phải) → paste `client_email` (1) → quyền **Editor** → **Send**
+5. Copy phần **ID** → lưu lại, gọi là **(C)**
 
-### 3f. Clone code + Cài đặt Sheet tự động
+### 3f. Cấp quyền cho Service Account
 
-**🪟 Windows (Command Prompt):**
+1. Trong Google Sheet vừa tạo → nhấn nút **Share** (Chia sẻ, góc trên phải)
+2. Trong ô "Add people", paste email **(A)** vào
+3. Quyền: chọn **Editor** (Người chỉnh sửa)
+4. Bỏ tick "Notify people" (Thông báo)
+5. Nhấn **Share** hoặc **Send**
+
+### 3g. Clone code và cài đặt trên máy
+
+Mở **Command Prompt** (`Win + R` → gõ `cmd` → Enter), chạy lần lượt:
+
 ```cmd
+cd %USERPROFILE%\Desktop
 git clone https://github.com/TEN_CUA_BAN/FormDangky.git
 cd FormDangky
 npm install
 copy .env.example .env.local
 ```
 
-**🍎 macOS (Terminal):**
-```bash
-git clone https://github.com/TEN_CUA_BAN/FormDangky.git
-cd FormDangky
-npm install
-cp .env.example .env.local
+> 💡 Thay `TEN_CUA_BAN` bằng tên GitHub thực của bạn.
+
+### 3h. Điền thông tin vào file `.env.local`
+
+Mở file `.env.local` bằng **Notepad**:
+```cmd
+notepad .env.local
 ```
 
-### 3g. Điền thông tin vào `.env.local`
-
-Mở file `.env.local` bằng trình soạn thảo (Notepad / TextEdit / VS Code):
+Sửa 3 dòng:
 
 ```env
-GOOGLE_CLIENT_EMAIL=sheets-writer@xxx.iam.gserviceaccount.com    ← (1)
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"   ← (2)
-GOOGLE_SPREADSHEET_ID=ABC123XYZ   ← (3)
+GOOGLE_CLIENT_EMAIL=sheets-writer@form-dang-ky.iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEv...dán toàn bộ chuỗi (B) ở đây...\n-----END PRIVATE KEY-----\n"
+GOOGLE_SPREADSHEET_ID=1aBcDeFgHiJkLmNoPqRs
 ```
 
-### 3h. Chạy script tự tạo các tab trong Sheet
+Lưu file (`Ctrl + S`), đóng Notepad.
 
-```bash
+### 3i. Chạy script tự tạo Sheet
+
+```cmd
 npx tsx scripts/setup-new-sheet.ts
 ```
 
-Kết quả:
+Kết quả mong đợi:
 ```
-✅ Tab "cài_đặt" — tạo thành công
-✅ Tab "loại_đăng_ký" — tạo thành công (1 dữ liệu mẫu)
-✅ Tab "trường_biểu_mẫu" — tạo thành công (6 dữ liệu mẫu)
-...
+🚀 Bắt đầu cài đặt Google Sheet...
+
+  ✅ Tab "cài_đặt" — tạo thành công (7 dữ liệu mẫu)
+  ✅ Tab "loại_đăng_ký" — tạo thành công (1 dữ liệu mẫu)
+  ✅ Tab "trường_biểu_mẫu" — tạo thành công (6 dữ liệu mẫu)
+  ✅ Tab "đăng_ký" — tạo thành công
+  ✅ Tab "chi_tiết_đăng_ký" — tạo thành công
+  ✅ Tab "nhật_ký" — tạo thành công
+  ✅ Tab "danh_mục" — tạo thành công
+  ✅ Tab "Tổng hợp đăng ký" — tạo thành công
+
 ✅ CÀI ĐẶT HOÀN TẤT!
 ```
 
-### 3i. Test thử trên máy (tuỳ chọn)
+### 3j. Test thử trên máy (tuỳ chọn)
 
-```bash
+```cmd
 npm run dev
 ```
-Mở trình duyệt → vào `http://localhost:3000` → thấy trang đăng ký → nhấn `Ctrl+C` để tắt
+
+Mở trình duyệt → vào **http://localhost:3000** → thấy trang đăng ký với form mẫu.
+
+Nhấn `Ctrl + C` trong Command Prompt để tắt.
 
 ---
 
-## BƯỚC 4 — Deploy lên Vercel (website chính thức)
+## BƯỚC 4 — Đưa website lên Vercel (trực tuyến)
 
-1. Vào 👉 [vercel.com](https://vercel.com/) → đăng nhập bằng **GitHub**
-2. Nhấn **Add New** → **Project**
-3. Tìm repo **FormDangky** → nhấn **Import**
-4. Mở phần **Environment Variables**, thêm lần lượt:
+### 4a. Đăng nhập Vercel
 
-   | Name (gõ chính xác) | Value (paste từ file JSON) |
-   |---|---|
-   | `GOOGLE_CLIENT_EMAIL` | Email từ (1) |
-   | `GOOGLE_PRIVATE_KEY` | Khoá từ (2) — bao gồm cả dấu `"` |
-   | `GOOGLE_SPREADSHEET_ID` | ID từ (3) |
+1. Vào 👉 **[vercel.com](https://vercel.com/)**
+2. Nhấn **Sign Up** → **Continue with GitHub**
+3. Cấp quyền cho Vercel truy cập GitHub
 
-5. Nhấn **Deploy**
-6. Chờ 1-2 phút → ✅ **Xong!**
-7. Vercel cho bạn link website: `ten-ban.vercel.app`
+### 4b. Import dự án
 
----
+1. Nhấn **Add New** → **Project**
+2. Tìm repo **FormDangky** trong danh sách → nhấn **Import**
 
-## 🎉 Sau khi hoàn thành
+### 4c. Thêm biến môi trường
 
-### Tuỳ biến nội dung (không cần code)
-- Mở Google Sheet → tab `cài_đặt` → sửa tiêu đề, mô tả, video
-- Tab `loại_đăng_ký` → thêm/sửa loại form
-- Tab `trường_biểu_mẫu` → thêm/sửa trường trong form
-- **Web tự cập nhật** — không cần deploy lại!
+Cuộn xuống phần **Environment Variables**, thêm lần lượt 3 biến:
 
-### Thêm video hướng dẫn cho mỗi form
-- Trong tab `loại_đăng_ký` → cột **I (Video)** → paste link YouTube embed
-- VD: `https://www.youtube.com/embed/abc123`
-- Video sẽ hiện trên trang form để người dùng xem trước khi điền
+| Ô **Name** (gõ chính xác) | Ô **Value** (paste giá trị) |
+|---|---|
+| `GOOGLE_CLIENT_EMAIL` | Giá trị **(A)** — email Service Account |
+| `GOOGLE_PRIVATE_KEY` | Giá trị **(B)** — chuỗi dài bao gồm `-----BEGIN...` |
+| `GOOGLE_SPREADSHEET_ID` | Giá trị **(C)** — ID Google Sheet |
 
-### Xem kết quả đăng ký
-- Mỗi form tự tạo tab kết quả riêng: `KQ_{tên form}`
-- Tab `Tổng hợp đăng ký` chứa tất cả đăng ký
+> 💡 Mỗi biến: gõ tên vào ô Name → paste giá trị vào ô Value → nhấn **Add**
+
+### 4d. Deploy
+
+1. Nhấn **Deploy**
+2. Chờ 1–2 phút (Vercel đang build)
+3. ✅ Khi thấy **"Congratulations!"** → website đã lên mạng!
+4. Nhấn vào link để xem: VD `form-dang-ky.vercel.app`
 
 ---
 
-## ❓ Gặp lỗi?
+## 🎉 HOÀN THÀNH!
+
+Website đăng ký của bạn đã hoạt động. Bây giờ bạn có thể:
+
+### ✏️ Tuỳ biến nội dung (trên Google Sheet, không cần code)
+
+| Muốn làm gì | Sửa tab nào |
+|---|---|
+| Đổi tiêu đề, phụ đề trang chủ | `cài_đặt` |
+| Thêm/sửa/xoá loại form | `loại_đăng_ký` |
+| Thêm/sửa trường trong form | `trường_biểu_mẫu` |
+| Thêm video hướng dẫn cho form | `loại_đăng_ký` → cột I |
+| Mở/đóng đăng ký | `cài_đặt` → dòng `registration_open` |
+
+> 🔄 Sau khi sửa Sheet, web tự cập nhật — **không cần deploy lại!**
+
+### 📊 Xem kết quả đăng ký
+
+- Mỗi form tự tạo tab kết quả: `KQ_{tên form}`
+- Tab `Tổng hợp đăng ký` chứa tất cả
+
+### 🎬 Thêm video hướng dẫn cho mỗi form
+
+1. Mở video YouTube muốn nhúng
+2. Nhấn **Share** → **Embed** → copy phần `src="https://www.youtube.com/embed/..."`
+3. Paste link embed vào **cột I** của tab `loại_đăng_ký`
+4. Video sẽ hiện trên trang form cho người dùng xem
+
+---
+
+## ❓ XỬ LÝ LỖI THƯỜNG GẶP
 
 | Lỗi | Nguyên nhân | Cách sửa |
 |---|---|---|
-| Trang trắng / lỗi 500 | Thiếu biến môi trường | Kiểm tra 3 biến trên Vercel Settings → Environment Variables |
-| "Unable to read sheet" | Chưa share Sheet | Share Sheet cho Service Account (bước 3e) |
-| Không thấy form | Sheet chưa có dữ liệu | Chạy lại `npx tsx scripts/setup-new-sheet.ts` |
-| `npx tsx` lỗi | Chưa cài Node.js | Quay lại Bước 1 |
-| `git clone` lỗi | Chưa cài Git | Quay lại Bước 1 |
+| `node` không nhận lệnh | Chưa cài Node.js hoặc chưa mở lại CMD | Cài Node.js (Bước 1a), mở CMD mới |
+| `git` không nhận lệnh | Chưa cài Git hoặc chưa mở lại CMD | Cài Git (Bước 1b), mở CMD mới |
+| `npm install` báo lỗi | Chưa `cd` vào thư mục dự án | Kiểm tra `cd FormDangky` |
+| Script setup báo "Permission" | Chưa share Sheet cho Service Account | Xem lại Bước 3f |
+| Script setup báo "API not enabled" | Chưa bật Sheets API | Xem lại Bước 3b |
+| Vercel hiện trang trắng/500 | Sai biến môi trường | Kiểm tra 3 biến trong Vercel Settings |
+| Không thấy form trên web | Sheet chưa có dữ liệu | Chạy lại `npx tsx scripts/setup-new-sheet.ts` |
 
 ---
 
-> 💡 Mỗi bản clone là **hoàn toàn độc lập** — code riêng, dữ liệu riêng, website riêng.
+## 📎 PHỤ LỤC — Hướng dẫn cho macOS
+
+Các bước tương tự, thay thế:
+
+| Windows | macOS |
+|---|---|
+| **Command Prompt** (`cmd`) | **Terminal** (tìm trong Launchpad) |
+| `copy .env.example .env.local` | `cp .env.example .env.local` |
+| `notepad .env.local` | `open -e .env.local` hoặc `nano .env.local` |
+| `cd %USERPROFILE%\Desktop` | `cd ~/Desktop` |
+| Cài Node.js: tải `.msi` | Tải `.pkg` hoặc `brew install node` |
+| Cài Git: tải từ git-scm.com | Thường có sẵn, hoặc `xcode-select --install` |
+
+Các bước còn lại (Fork, Google Cloud, Vercel) **giống hệt nhau** trên cả 2 hệ điều hành.
+
+---
+
+> 💡 Mỗi bản nhân bản là **hoàn toàn độc lập** — code riêng, dữ liệu riêng, website riêng, tài khoản riêng.
+
+© 2026 — Hệ thống đăng ký đa năng 🙏
