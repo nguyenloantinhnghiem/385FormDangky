@@ -536,6 +536,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                     <DynamicFormScreen
                         formType={registrationType.formType}
                         formLabel={registrationType.label}
+                        videoUrl={registrationType.videoUrl}
                         defaultValues={dynamicFormData || undefined}
                         onNext={handleDynamicFormNext}
                         onBack={() => goTo('applicant')}

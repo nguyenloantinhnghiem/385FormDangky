@@ -240,6 +240,7 @@ export interface RegistrationType {
     order: number;
     formType: string;
     parent: string;
+    videoUrl: string;
 }
 
 export async function getRegistrationTypes(): Promise<RegistrationType[]> {
@@ -247,7 +248,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "'loại_đăng_ký'!A:H",
+            range: "'loại_đăng_ký'!A:I",
         });
         const rows = (res.data.values as string[][]) || [];
         if (rows.length < 2) {
@@ -260,6 +261,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
                 order: 1,
                 formType: 'cau_sieu',
                 parent: '',
+                videoUrl: '',
             }];
         }
 
@@ -273,6 +275,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
                 order: parseInt(row[5] || '99', 10),
                 formType: row[6] || 'custom',
                 parent: row[7] || '',
+                videoUrl: row[8] || '',
             }))
             .filter((r) => r.key && r.label)
             .sort((a, b) => a.order - b.order);
@@ -286,6 +289,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
             order: 1,
             formType: 'cau_sieu',
             parent: '',
+            videoUrl: '',
         }];
     }
 }

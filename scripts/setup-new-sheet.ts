@@ -49,7 +49,7 @@ const TABS: TabDef[] = [
     },
     {
         name: 'loại_đăng_ký',
-        headers: ['Mã loại', 'Tên hiển thị', 'Mô tả ngắn', 'Icon', 'Đang mở', 'Thứ tự', 'Mã form', 'Thuộc nhóm cha'],
+        headers: ['Mã loại', 'Tên hiển thị', 'Mô tả ngắn', 'Icon', 'Đang mở', 'Thứ tự', 'Mã form', 'Thuộc nhóm cha', 'Video hướng dẫn'],
         sampleData: [
             ['mau_form', 'Đăng ký mẫu', 'Form mẫu để test hệ thống', '📝', 'TRUE', '1', 'mau_form', ''],
         ],

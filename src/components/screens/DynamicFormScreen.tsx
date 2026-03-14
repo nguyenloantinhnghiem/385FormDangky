@@ -12,12 +12,13 @@ import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2 } from 'lucide-r
 interface DynamicFormScreenProps {
     formType: string;
     formLabel: string;
+    videoUrl?: string;
     defaultValues?: Record<string, unknown>;
     onNext: (data: Record<string, unknown>, fieldLabels: Record<string, string>) => void;
     onBack: () => void;
 }
 
-export default function DynamicFormScreen({ formType, formLabel, defaultValues, onNext, onBack }: DynamicFormScreenProps) {
+export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, onNext, onBack }: DynamicFormScreenProps) {
     const [sections, setSections] = useState<FormSection[]>([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState<Record<string, unknown>>(defaultValues || {});
@@ -423,7 +424,7 @@ export default function DynamicFormScreen({ formType, formLabel, defaultValues, 
 
     return (
         <div className="animate-slide-in">
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                     <FileText className="w-5 h-5 text-amber-600" />
                 </div>
@@ -432,6 +433,28 @@ export default function DynamicFormScreen({ formType, formLabel, defaultValues, 
                     <p className="text-sm text-stone-500">Điền thông tin đăng ký</p>
                 </div>
             </div>
+
+            {/* Per-form video guide */}
+            {videoUrl && (
+                <details className="mb-5 group">
+                    <summary className="flex items-center gap-2 cursor-pointer text-sm text-amber-700 font-medium bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 hover:bg-amber-100 transition-colors">
+                        <span className="text-base">🎬</span>
+                        Xem video hướng dẫn
+                        <span className="ml-auto text-xs text-amber-400 group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div className="mt-2 rounded-lg overflow-hidden border border-stone-200 bg-black">
+                        <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                            <iframe
+                                src={videoUrl}
+                                className="absolute inset-0 w-full h-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                title={`Video hướng dẫn — ${formLabel}`}
+                            />
+                        </div>
+                    </div>
+                </details>
+            )}
 
             <div className="space-y-4">
                 {sections.map((section) => {
