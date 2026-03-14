@@ -1,0 +1,26 @@
+# Tự động cập nhật fork theo repo gốc
+# Chạy mỗi ngày lúc 2:00 sáng UTC (9:00 sáng VN)
+# Người clone chỉ cần bật Actions 1 lần → fork tự cập nhật mãi mãi
+
+name: 🔄 Tự động cập nhật từ bản gốc
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # Mỗi ngày lúc 2:00 UTC = 9:00 VN
+  workflow_dispatch:       # Cho phép chạy thủ công bất cứ lúc nào
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Chỉ chạy trên fork (không chạy trên repo gốc)
+    if: github.repository != 'Hoanq1003/FormDangky'
+    
+    steps:
+      - name: 🔄 Sync fork với upstream
+        uses: aormber/Fork-Sync-With-Upstream-action@v2.1
+        with:
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          upstream_sync_repo: Hoanq1003/FormDangky
+          upstream_sync_branch: main
+          target_sync_branch: main
+          test_mode: false

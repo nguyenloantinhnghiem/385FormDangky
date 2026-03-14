@@ -230,6 +230,22 @@ Cuộn xuống phần **Environment Variables**, thêm lần lượt 3 biến:
 3. ✅ Khi thấy **"Congratulations!"** → website đã lên mạng!
 4. Nhấn vào link để xem: VD `form-dang-ky.vercel.app`
 
+### 4e. Bật tự động cập nhật theo bản gốc (cài 1 lần, chạy mãi mãi)
+
+Khi bản gốc có cập nhật (sửa lỗi, thêm tính năng), fork của bạn sẽ **tự động cập nhật** — không cần làm gì!
+
+**Cài đặt 1 lần:**
+1. Mở repo fork của bạn trên GitHub: `github.com/TEN_CUA_BAN/FormDangky`
+2. Nhấn tab **Actions** (phía trên)
+3. Nếu thấy nút **"I understand my workflows, go ahead and enable them"** → nhấn vào
+4. ✅ Xong! Hệ thống sẽ tự kiểm tra mỗi ngày lúc 9:00 sáng (giờ VN):
+   - Nếu bản gốc có thay đổi → fork tự cập nhật → Vercel tự deploy lại
+   - Nếu không có gì mới → không làm gì
+
+> 💡 Bạn cũng có thể chạy thủ công: tab **Actions** → **"🔄 Tự động cập nhật từ bản gốc"** → **Run workflow** → **Run workflow**
+
+> ⚠️ **Dữ liệu Google Sheet không bị ảnh hưởng** — chỉ code website được cập nhật.
+
 ---
 
 ## 🎉 HOÀN THÀNH!
