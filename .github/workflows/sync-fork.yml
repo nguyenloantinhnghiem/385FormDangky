@@ -7,20 +7,48 @@ name: 🔄 Tự động cập nhật từ bản gốc
 on:
   schedule:
     - cron: '0 2 * * *'   # Mỗi ngày lúc 2:00 UTC = 9:00 VN
-  workflow_dispatch:       # Cho phép chạy thủ công bất cứ lúc nào
+  workflow_dispatch:       # Cho phép chạy thủ công
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     # Chỉ chạy trên fork (không chạy trên repo gốc)
     if: github.repository != 'Hoanq1003/FormDangky'
-    
+
+    permissions:
+      contents: write
+
     steps:
-      - name: 🔄 Sync fork với upstream
-        uses: aormber/Fork-Sync-With-Upstream-action@v2.1
+      - name: 📥 Checkout fork
+        uses: actions/checkout@v4
         with:
-          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
-          upstream_sync_repo: Hoanq1003/FormDangky
-          upstream_sync_branch: main
-          target_sync_branch: main
-          test_mode: false
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔄 Fetch và merge từ upstream
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Thêm upstream
+          git remote add upstream https://github.com/Hoanq1003/FormDangky.git || true
+          
+          # Fetch upstream
+          git fetch upstream main
+          
+          # Kiểm tra có gì mới không
+          BEHIND=$(git rev-list --count HEAD..upstream/main)
+          
+          if [ "$BEHIND" -gt 0 ]; then
+            echo "🔄 Có $BEHIND commit mới từ bản gốc. Đang cập nhật..."
+            git merge upstream/main --no-edit --allow-unrelated-histories || {
+              echo "⚠️ Có xung đột, dùng upstream version"
+              git checkout --theirs .
+              git add .
+              git commit -m "🔄 Auto-sync: resolve conflicts with upstream" --no-edit
+            }
+            git push origin main
+            echo "✅ Đã cập nhật thành công!"
+          else
+            echo "✅ Fork đã cập nhật rồi, không cần làm gì."
+          fi
