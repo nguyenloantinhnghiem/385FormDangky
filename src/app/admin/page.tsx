@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { adminListSubmissions, adminGetSubmission } from '@/actions/admin';
+import { getRegistrationTypes, type RegistrationType } from '@/actions/settings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Search, Eye, ArrowLeft, Lock, LogIn, Loader2 } from 'lucide-react';
+import { Search, Eye, ArrowLeft, Lock, LogIn, Loader2, Link2, Check, Copy, ExternalLink } from 'lucide-react';
 
 type ViewMode = 'login' | 'list' | 'detail';
 
@@ -20,6 +21,8 @@ export default function AdminPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
     const [loading, setLoading] = useState(false);
+    const [regTypes, setRegTypes] = useState<RegistrationType[]>([]);
+    const [copiedKey, setCopiedKey] = useState<string | null>(null);
     const [detail, setDetail] = useState<{
         submission: Record<string, string>;
         items: Record<string, string>[];
@@ -52,11 +55,26 @@ export default function AdminPage() {
         if (result.success && result.data) {
             setSubmissions(result.data);
             setFiltered(result.data);
+            // Also fetch reg types for link management
+            const types = await getRegistrationTypes();
+            setRegTypes(types);
             setViewMode('list');
         } else {
             setLoginError(result.error || 'Đăng nhập thất bại');
         }
         setLoading(false);
+    };
+
+    const getBaseUrl = () => {
+        if (typeof window !== 'undefined') return window.location.origin;
+        return '';
+    };
+
+    const copyLink = async (key: string) => {
+        const url = `${getBaseUrl()}/dang-ky/${key}`;
+        await navigator.clipboard.writeText(url);
+        setCopiedKey(key);
+        setTimeout(() => setCopiedKey(null), 2000);
     };
 
     const handleViewDetail = async (submissionId: string) => {
@@ -110,6 +128,12 @@ export default function AdminPage() {
             </div>
         );
     }
+
+    // Flatten reg types: get all leaf types (with formType)
+    const leafTypes = regTypes.filter(t => t.formType);
+
+    // List view — helper for the link section
+    const baseUrl = getBaseUrl();
 
     // Detail view
     if (viewMode === 'detail' && detail) {
@@ -211,6 +235,64 @@ export default function AdminPage() {
                     <h1 className="text-xl font-bold text-stone-800">Quản lý đăng ký</h1>
                     <Badge variant="secondary">{submissions.length} đăng ký</Badge>
                 </div>
+
+                {/* ── Link Form Section ── */}
+                {leafTypes.length > 0 && (
+                    <details className="mb-6">
+                        <summary className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 hover:bg-blue-100 transition-colors">
+                            <Link2 className="w-4 h-4" />
+                            Link form đăng ký ({leafTypes.length} form)
+                            <span className="ml-auto text-xs text-blue-400">▼</span>
+                        </summary>
+                        <div className="mt-2 space-y-2">
+                            {/* Home link */}
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                                <span className="text-lg">🏠</span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-stone-700">Trang chủ</p>
+                                    <p className="text-[11px] text-stone-400 truncate">{baseUrl}/</p>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 gap-1 text-xs"
+                                    onClick={() => { navigator.clipboard.writeText(baseUrl + '/'); setCopiedKey('home'); setTimeout(() => setCopiedKey(null), 2000); }}
+                                >
+                                    {copiedKey === 'home' ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                    {copiedKey === 'home' ? 'Đã copy' : 'Copy'}
+                                </Button>
+                            </div>
+
+                            {/* Each form link */}
+                            {leafTypes.map(rt => (
+                                <div key={rt.key} className="flex items-center gap-2 p-3 rounded-lg bg-white border border-stone-200 hover:border-blue-200 transition-colors">
+                                    <span className="text-lg">{rt.icon}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-semibold text-stone-700">{rt.label}</p>
+                                        <p className="text-[11px] text-stone-400 truncate">{baseUrl}/dang-ky/{rt.key}</p>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 gap-1 text-xs"
+                                        onClick={() => copyLink(rt.key)}
+                                    >
+                                        {copiedKey === rt.key ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                        {copiedKey === rt.key ? 'Đã copy' : 'Copy'}
+                                    </Button>
+                                    <a
+                                        href={`/dang-ky/${rt.key}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1 text-stone-400 hover:text-blue-500 transition-colors"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                </div>
+                            ))}
+                        </div>
+                    </details>
+                )}
 
                 {/* Search & filter */}
                 <div className="flex gap-2 mb-4">
