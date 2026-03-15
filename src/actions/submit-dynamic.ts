@@ -147,10 +147,22 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
             const fieldConfigs: Record<string, { label: string; separateColumn: boolean }> = {};
             for (const sec of sections) {
                 for (const f of sec.fields) {
-                    fieldConfigs[f.fieldKey] = {
-                        label: f.fieldLabel,
-                        separateColumn: f.separateColumn,
-                    };
+                    if (f.groupKey && f.subFieldKey) {
+                        // Sub-field: register both as groupKey.subFieldKey and standalone
+                        fieldConfigs[`${f.groupKey}.${f.subFieldKey}`] = {
+                            label: f.fieldLabel,
+                            separateColumn: false,
+                        };
+                        fieldConfigs[f.subFieldKey] = {
+                            label: f.fieldLabel,
+                            separateColumn: false,
+                        };
+                    } else {
+                        fieldConfigs[f.fieldKey] = {
+                            label: f.fieldLabel,
+                            separateColumn: f.separateColumn,
+                        };
+                    }
                 }
             }
             await appendToFormSheet(registrationLabel, applicant, formData, fieldConfigs);

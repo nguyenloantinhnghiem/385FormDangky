@@ -233,7 +233,27 @@ export async function appendToFormSheet(
                 if (Array.isArray(v) && v.length === 0) return false;
                 return true;
             })
-            .map((k) => `${fieldConfigs[k]?.label || k}: ${fmt(formData[k])}`)
+            .map((k) => {
+                const v = formData[k];
+                const label = fieldConfigs[k]?.label || k;
+
+                // Group data: array of objects → format each item with sub-field labels
+                if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && v[0] !== null) {
+                    const items = v as Record<string, unknown>[];
+                    const itemLines = items.map((item, idx) => {
+                        const parts = Object.entries(item)
+                            .filter(([, sv]) => sv !== undefined && sv !== null && sv !== '')
+                            .map(([sk, sv]) => {
+                                const subLabel = fieldConfigs[`${k}.${sk}`]?.label || fieldConfigs[sk]?.label || sk;
+                                return `${subLabel}: ${Array.isArray(sv) ? (sv as string[]).join(', ') : String(sv)}`;
+                            });
+                        return `  ${idx + 1}. ${parts.join(' — ')}`;
+                    });
+                    return `${label}:\n${itemLines.join('\n')}`;
+                }
+
+                return `${label}: ${fmt(v)}`;
+            })
             .join('\n');
     }
 
