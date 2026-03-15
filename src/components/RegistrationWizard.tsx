@@ -480,9 +480,18 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             {screen !== 'landing' && screen !== 'success' && (
                 <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-stone-200 px-4 py-3">
                     <div className="max-w-lg mx-auto flex items-center justify-between">
-                        <h1 className="text-sm font-bold text-amber-600">
-                            {registrationType?.label || 'Đăng Ký'}
-                        </h1>
+                        <div className="flex items-center gap-2">
+                            <a
+                                href="/"
+                                className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/50 flex items-center justify-center text-amber-600 hover:bg-amber-100 hover:border-amber-300 transition-colors"
+                                title="Về trang chủ"
+                            >
+                                🏠
+                            </a>
+                            <h1 className="text-sm font-bold text-amber-600">
+                                {registrationType?.label || 'Đăng Ký'}
+                            </h1>
+                        </div>
                         {ceremonyType && !isDynamic && (
                             <Badge variant="outline" className="text-xs">
                                 {CEREMONY_MAP.get(ceremonyType)?.shortLabel}
