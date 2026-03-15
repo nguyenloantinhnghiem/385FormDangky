@@ -230,22 +230,6 @@ Cuộn xuống phần **Environment Variables**, thêm lần lượt 3 biến:
 3. ✅ Khi thấy **"Congratulations!"** → website đã lên mạng!
 4. Nhấn vào link để xem: VD `form-dang-ky.vercel.app`
 
-### 4e. Bật tự động cập nhật theo bản gốc (cài 1 lần, chạy mãi mãi)
-
-Khi bản gốc có cập nhật (sửa lỗi, thêm tính năng), fork của bạn sẽ **tự động cập nhật** — không cần làm gì!
-
-**Cài đặt 1 lần:**
-1. Mở repo fork của bạn trên GitHub: `github.com/TEN_CUA_BAN/FormDangky`
-2. Nhấn tab **Actions** (phía trên)
-3. Nếu thấy nút **"I understand my workflows, go ahead and enable them"** → nhấn vào
-4. ✅ Xong! Hệ thống sẽ tự kiểm tra mỗi ngày lúc 9:00 sáng (giờ VN):
-   - Nếu bản gốc có thay đổi → fork tự cập nhật → Vercel tự deploy lại
-   - Nếu không có gì mới → không làm gì
-
-> 💡 Bạn cũng có thể chạy thủ công: tab **Actions** → **"🔄 Tự động cập nhật từ bản gốc"** → **Run workflow** → **Run workflow**
-
-> ⚠️ **Dữ liệu Google Sheet không bị ảnh hưởng** — chỉ code website được cập nhật.
-
 ---
 
 ## 🎉 HOÀN THÀNH!
@@ -275,6 +259,94 @@ Website đăng ký của bạn đã hoạt động. Bây giờ bạn có thể:
 2. Nhấn **Share** → **Embed** → copy phần `src="https://www.youtube.com/embed/..."`
 3. Paste link embed vào **cột I** của tab `loại_đăng_ký`
 4. Video sẽ hiện trên trang form cho người dùng xem
+
+---
+
+## 🔄 CẬP NHẬT TÍNH NĂNG MỚI (Sync Fork)
+
+Khi bản gốc có cập nhật (sửa lỗi, thêm tính năng mới), bạn có **2 cách** nhận bản mới:
+
+### Cách 1: Tự động (khuyên dùng — cài 1 lần, chạy mãi)
+
+1. Mở fork trên GitHub: `github.com/TEN_CUA_BAN/FormDangky`
+2. Nhấn tab **Actions** (phía trên)
+3. Nhấn nút **"I understand my workflows, go ahead and enable them"**
+4. ✅ **Xong!** Từ nay hệ thống tự kiểm tra mỗi ngày lúc 9:00 sáng VN:
+   - Có thay đổi → fork tự cập nhật → Vercel tự deploy lại
+   - Không có gì mới → không làm gì
+
+> 💡 Chạy thủ công bất cứ lúc nào: **Actions** → **"🔄 Tự động cập nhật từ bản gốc"** → **Run workflow** → **Run workflow**
+
+### Cách 2: Thủ công (nếu chưa bật Actions)
+
+1. Mở fork trên GitHub: `github.com/TEN_CUA_BAN/FormDangky`
+2. Sẽ thấy dòng: *"This branch is X commits behind Hoanq1003:main"*
+3. Nhấn nút **Sync fork** → **Update branch**
+4. ✅ Code cập nhật → Vercel tự deploy lại
+
+> ⚠️ **Dữ liệu Google Sheet KHÔNG bị ảnh hưởng** — chỉ code website thay đổi. Dữ liệu đăng ký, cấu hình form vẫn nguyên vẹn.
+
+---
+
+## 🔗 LẤY LINK FORM ĐĂNG KÝ
+
+### Cấu trúc link
+
+| Loại | Link |
+|---|---|
+| **Trang chủ** | `https://ten-cua-ban.vercel.app/` |
+| **Form cụ thể** | `https://ten-cua-ban.vercel.app/dang-ky/{mã_form}` |
+| **Trang admin** | `https://ten-cua-ban.vercel.app/admin` |
+
+**Ví dụ:**
+
+| Form | Mã (cột A tab `loại_đăng_ký`) | Link trực tiếp |
+|---|---|---|
+| Đăng ký tu Bài 8 | `B8` | `https://ten-cua-ban.vercel.app/dang-ky/B8` |
+| Đăng ký Cầu Siêu | `cau_sieu` | `https://ten-cua-ban.vercel.app/dang-ky/cau_sieu` |
+| Sám Hối Chư Tăng | `shct` | `https://ten-cua-ban.vercel.app/dang-ky/shct` |
+
+### Cách lấy link nhanh từ trang Admin
+
+1. Mở trình duyệt → vào `https://ten-cua-ban.vercel.app/admin`
+2. Đăng nhập bằng mật khẩu admin (xem mục bên dưới)
+3. Bấm vào mục **🔗 Link form đăng ký** (phía trên cùng)
+4. Hiện danh sách tất cả form → nhấn **Copy** để copy link
+5. Paste link vào WhatsApp, Zalo... để gửi cho người đăng ký
+
+> 💡 Nhấn biểu tượng 🔗 (mũi tên) bên phải để mở form trong tab mới xem trước.
+
+---
+
+## 🔐 ĐĂNG NHẬP TRANG ADMIN
+
+Trang admin (`/admin`) dùng để xem tất cả đăng ký và lấy link form.
+
+### Cài đặt mật khẩu admin
+
+**Mật khẩu được đặt qua biến môi trường `ADMIN_PASSWORD`:**
+
+1. Vào 👉 **[vercel.com](https://vercel.com/)** → chọn Project của bạn
+2. Nhấn **Settings** (thanh trên) → **Environment Variables**
+3. Thêm biến mới:
+
+| Name | Value |
+|---|---|
+| `ADMIN_PASSWORD` | Mật khẩu do bạn tự đặt (VD: `matkhau123`) |
+
+4. Nhấn **Save**
+5. Quay lại tab **Deployments** → nhấn **⋮** (3 chấm) ở deployment mới nhất → **Redeploy**
+6. Chờ 1-2 phút → mật khẩu sẽ hoạt động
+
+### Đăng nhập
+
+1. Mở `https://ten-cua-ban.vercel.app/admin`
+2. Nhập mật khẩu bạn vừa đặt ở trên
+3. ✅ Sau khi đăng nhập thấy:
+   - **🔗 Link form đăng ký** — copy link chia sẻ
+   - **📋 Danh sách đăng ký** — xem chi tiết từng bài đăng ký
+
+> ⚠️ Nếu chưa đặt `ADMIN_PASSWORD` → không ai đăng nhập được. Điều này an toàn.
 
 ---
 
