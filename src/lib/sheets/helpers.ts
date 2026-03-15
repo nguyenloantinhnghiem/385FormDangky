@@ -168,22 +168,36 @@ export async function appendToFormSheet(
     const separateKeys = allKeys.filter((k) => fieldConfigs[k]?.separateColumn);
     const groupedKeys = allKeys.filter((k) => !fieldConfigs[k]?.separateColumn);
 
+    // Build label→key map for separate columns
+    const labelToKey = new Map<string, string>();
+    for (const k of separateKeys) {
+        const label = fieldConfigs[k]?.label || k;
+        labelToKey.set(label, k);
+    }
+
     // Check if tab exists
     let tabExists = false;
+    let existingHeaders: string[] = [];
     try {
         const meta = await sheets.spreadsheets.get({ spreadsheetId });
         tabExists = (meta.data.sheets || []).some(
             (s) => s.properties?.title === tabName
         );
+        if (tabExists) {
+            const headerRes = await sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: `'${tabName}'!1:1`,
+            });
+            existingHeaders = (headerRes.data.values?.[0] || []) as string[];
+        }
     } catch { /* ignore */ }
 
-    // Build headers
+    // Fixed headers
     const fixedHeaders = ['STT', 'Ngày gửi', 'Tín chủ', 'SĐT', 'Tổ'];
-    const separateHeaders = separateKeys.map((k) => fieldConfigs[k]?.label || k);
-    const allHeaders = [...fixedHeaders, ...separateHeaders];
-    if (groupedKeys.length > 0) allHeaders.push('Chi tiết');
+    const separateLabels = separateKeys.map((k) => fieldConfigs[k]?.label || k);
 
     if (!tabExists) {
+        // Create new tab with all headers
         try {
             await sheets.spreadsheets.batchUpdate({
                 spreadsheetId,
@@ -193,12 +207,37 @@ export async function appendToFormSheet(
             });
         } catch { /* race */ }
 
+        const allHeaders = [...fixedHeaders, ...separateLabels];
+        if (groupedKeys.length > 0) allHeaders.push('Chi tiết');
+
         await sheets.spreadsheets.values.update({
             spreadsheetId,
             range: `'${tabName}'!A1`,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [allHeaders] },
         });
+
+        existingHeaders = allHeaders;
+    } else {
+        // Tab exists → add any new separate column headers that don't exist yet
+        const newLabels = separateLabels.filter(
+            (label) => !existingHeaders.includes(label)
+        );
+        // Also ensure "Chi tiết" column exists if needed
+        const needChiTiet = groupedKeys.length > 0 && !existingHeaders.includes('Chi tiết');
+
+        if (newLabels.length > 0 || needChiTiet) {
+            const toAdd = [...newLabels];
+            if (needChiTiet) toAdd.push('Chi tiết');
+            const startCol = String.fromCharCode(65 + existingHeaders.length);
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `'${tabName}'!${startCol}1`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [toAdd] },
+            });
+            existingHeaders = [...existingHeaders, ...toAdd];
+        }
     }
 
     // STT
@@ -219,14 +258,29 @@ export async function appendToFormSheet(
         return String(v || '');
     };
 
-    // Build row
+    // Build row by matching to existing header positions
     const now = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-    const separateValues = separateKeys.map((k) => fmt(formData[k]));
+    const row: string[] = new Array(existingHeaders.length).fill('');
+
+    // Fixed columns
+    const fixedValues = [String(stt), now, applicant.tinChu, "'" + applicant.phone, applicant.to || ''];
+    for (let i = 0; i < fixedValues.length && i < existingHeaders.length; i++) {
+        row[i] = fixedValues[i];
+    }
+
+    // Separate column values → put in correct header position
+    for (const k of separateKeys) {
+        const label = fieldConfigs[k]?.label || k;
+        const colIdx = existingHeaders.indexOf(label);
+        if (colIdx >= 0) {
+            row[colIdx] = fmt(formData[k]);
+        }
+    }
 
     // Grouped "Chi tiết" column
-    let groupedText = '';
     if (groupedKeys.length > 0) {
-        groupedText = groupedKeys
+        const chiTietIdx = existingHeaders.indexOf('Chi tiết');
+        const groupedText = groupedKeys
             .filter((k) => {
                 const v = formData[k];
                 if (v === false || v === '' || v === null || v === undefined) return false;
@@ -237,7 +291,7 @@ export async function appendToFormSheet(
                 const v = formData[k];
                 const label = fieldConfigs[k]?.label || k;
 
-                // Group data: array of objects → format each item with sub-field labels
+                // Group data: array of objects
                 if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && v[0] !== null) {
                     const items = v as Record<string, unknown>[];
                     const itemLines = items.map((item, idx) => {
@@ -255,17 +309,13 @@ export async function appendToFormSheet(
                 return `${label}: ${fmt(v)}`;
             })
             .join('\n');
-    }
 
-    const row = [
-        String(stt),
-        now,
-        applicant.tinChu,
-        "'" + applicant.phone,
-        applicant.to || '',
-        ...separateValues,
-    ];
-    if (groupedKeys.length > 0) row.push(groupedText);
+        if (chiTietIdx >= 0) {
+            row[chiTietIdx] = groupedText;
+        } else {
+            row.push(groupedText);
+        }
+    }
 
     await sheets.spreadsheets.values.append({
         spreadsheetId,
