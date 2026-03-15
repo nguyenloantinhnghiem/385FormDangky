@@ -226,14 +226,20 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
                             </>
                         )}
 
-                        {/* Secondary actions */}
-                        <div className="pt-2">
+                        {/* Lookup / Re-register — Prominent */}
+                        <div className="pt-4 mt-2 border-t border-stone-200/40">
                             <button
                                 onClick={onLookup}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm text-stone-500 hover:text-amber-700 hover:bg-amber-50/50 border border-transparent hover:border-amber-200/50 transition-all"
+                                className="w-full group flex items-center gap-3.5 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200/60 shadow-sm hover:shadow-md hover:border-blue-300 hover:from-blue-100 hover:to-indigo-100 transition-all text-left"
                             >
-                                <Search className="w-4 h-4" />
-                                Tra cứu đăng ký cũ (SĐT)
+                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white flex-shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                                    <RotateCcw className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-blue-800 text-sm">Tra cứu & Đăng ký lại</p>
+                                    <p className="text-xs text-blue-500">Nhập SĐT để xem đăng ký cũ hoặc đăng ký lại</p>
+                                </div>
+                                <Search className="w-5 h-5 text-blue-300 group-hover:text-blue-500 transition-colors flex-shrink-0" />
                             </button>
                         </div>
                     </div>
