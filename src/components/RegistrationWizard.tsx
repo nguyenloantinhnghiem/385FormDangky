@@ -254,14 +254,27 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     // Form key for draft isolation
     const formKey = registrationType?.key;
 
-    // Navigate home: if direct link → go to /, else show landing
+    // Navigate home: clear all state and go to landing
     const goHome = useCallback(() => {
+        // Clear all drafts so user starts fresh
+        clearAllDrafts();
+        // Reset all state
+        setRegistrationType(null);
+        setCeremonyType(null);
+        setApplicant(null);
+        setFormData(null);
+        setDynamicFormData(null);
+        setDynamicFieldLabels({});
+        setSubmissionCode('');
+        setSubmitError(null);
+        setDraftLoaded(false);
         if (initialRegType) {
-            router.push('/');
+            // Direct link → full page navigation to home
+            window.location.href = '/';
         } else {
             setScreen('landing');
         }
-    }, [initialRegType, router]);
+    }, [initialRegType]);
 
     // On direct link: clear old draft for this form to start fresh
     useEffect(() => {
@@ -273,24 +286,18 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Load draft only when on landing page (no initialRegType)
+    // Load draft: only restore applicant data, NOT the screen position
+    // This prevents "going home" from jumping back to old forms
     useEffect(() => {
         if (initialRegType) return; // Direct link — always fresh
         if (typeof window !== 'undefined' && hasDraft()) {
             const draft = loadDraft();
-            if (draft) {
-                const validScreens: ScreenName[] = ['landing', 'ceremony_select', 'applicant', 'registration_form', 'lookup', 'summary', 'success'];
-                const savedScreen = draft.currentScreen || 'landing';
-
-                if (!validScreens.includes(savedScreen)) {
-                    clearDraft(formKey);
-                    return;
-                }
-
-                setCeremonyType(draft.ceremonyType);
+            if (draft && draft.applicant) {
+                // Only restore applicant info for convenience
+                // Do NOT restore screen — always start at landing
+                setCeremonyType(draft.ceremonyType || null);
                 setApplicant(draft.applicant);
-                setScreen(savedScreen);
-                setDraftLoaded(true);
+                // Keep screen as 'landing' — user decides where to go
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
