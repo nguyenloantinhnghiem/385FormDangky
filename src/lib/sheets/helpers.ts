@@ -251,10 +251,35 @@ export async function appendToFormSheet(
     } catch { /* starts at 1 */ }
 
     // Format value helper
-    const fmt = (v: unknown): string => {
+    const fmt = (v: unknown, fieldKey?: string): string => {
         if (v === true) return 'Có';
         if (v === false) return 'Không';
-        if (Array.isArray(v)) return v.join(', ');
+        if (Array.isArray(v)) {
+            // Array of objects (group data) → format each item with sub-field labels
+            if (v.length > 0 && typeof v[0] === 'object' && v[0] !== null) {
+                const items = v as Record<string, unknown>[];
+                return items.map((item, idx) => {
+                    const parts = Object.entries(item)
+                        .filter(([, sv]) => sv !== undefined && sv !== null && sv !== '')
+                        .map(([sk, sv]) => {
+                            const subLabel = fieldKey
+                                ? (fieldConfigs[`${fieldKey}.${sk}`]?.label || fieldConfigs[sk]?.label || sk)
+                                : sk;
+                            return `${subLabel}: ${Array.isArray(sv) ? (sv as string[]).join(', ') : String(sv)}`;
+                        });
+                    return `${idx + 1}. ${parts.join(' — ')}`;
+                }).join('\n');
+            }
+            // Array of strings
+            return v.join(', ');
+        }
+        if (typeof v === 'object' && v !== null) {
+            // Single object → format key:value pairs
+            return Object.entries(v)
+                .filter(([, sv]) => sv !== undefined && sv !== null && sv !== '')
+                .map(([sk, sv]) => `${sk}: ${String(sv)}`)
+                .join(', ');
+        }
         return String(v || '');
     };
 
@@ -273,7 +298,7 @@ export async function appendToFormSheet(
         const label = fieldConfigs[k]?.label || k;
         const colIdx = existingHeaders.indexOf(label);
         if (colIdx >= 0) {
-            row[colIdx] = fmt(formData[k]);
+            row[colIdx] = fmt(formData[k], k);
         }
     }
 
