@@ -368,11 +368,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
     // Handle re-registration from lookup
     const handleSelectPast = (sub: PastSubmission) => {
-        // Set ceremony type
-        const ct = sub.ceremonyType as CeremonyType;
-        setCeremonyType(ct);
-
-        // Set applicant
+        // Set applicant info (always pre-fill)
         setApplicant({
             tinChu: sub.applicantName,
             phone: sub.applicantPhone,
@@ -381,52 +377,69 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             notes: '',
         });
 
-        // Rebuild form data from items
-        const rebuilt: AllInOneFormData = {
-            hlTrong49: [],
-            hlNgoai49: [],
-            bai8_cungDuong: 'khong',
-            bai8_hlGiaTien: false,
-            bai8_hlTrenDat: false,
-            bai8_danhSachNghiep: [],
-            bai8_ghiChu: '',
-            tamLinhKhac: [],
-        };
+        // Check if this is a legacy Cầu Siêu submission
+        const isCauSieu = sub.ceremonyType === 'trai_tang'
+            || sub.ceremonyType === 'trai_vien'
+            || sub.ceremonyType === 'tuy_duyen'
+            || sub.ceremonyType === 'cau_sieu';
 
-        for (const item of sub.itemsData) {
-            try {
-                const payload = item.payloadJson ? JSON.parse(item.payloadJson) : {};
+        if (isCauSieu) {
+            // Legacy Cầu Siêu flow → rebuild form data
+            const ct = sub.ceremonyType as CeremonyType;
+            setCeremonyType(ct);
 
-                if (item.categoryKey === 'hl_trong_49_ngay') {
-                    rebuilt.hlTrong49!.push({
-                        hoTen: payload.hoTen || item.displayName || '',
-                        ngayMat: payload.ngayMat || '',
-                        tho: payload.tho || '',
-                        anTangTai: payload.anTangTai || '',
-                    });
-                } else if (item.categoryKey === 'hl_ngoai_49_ro_ten') {
-                    rebuilt.hlNgoai49!.push({
-                        hoTen: payload.hoTen || item.displayName || '',
-                        ngayMat: payload.ngayMat || '',
-                        tho: payload.tho || '',
-                        anTangTai: payload.anTangTai || '',
-                    });
-                } else if (item.categoryKey === 'tam_linh_bai_8') {
-                    rebuilt.bai8_cungDuong = payload.cungDuong || 'khong';
-                    rebuilt.bai8_hlGiaTien = payload.hlGiaTien || false;
-                    rebuilt.bai8_hlTrenDat = payload.hlTrenDat || false;
-                    rebuilt.bai8_danhSachNghiep = (payload.danhSachNghiep || []).map((n: { moTa?: string }) => ({ moTa: n.moTa || '' }));
-                    rebuilt.bai8_ghiChu = payload.ghiChu || '';
-                } else if (item.categoryKey === 'tam_linh_khac') {
-                    rebuilt.tamLinhKhac!.push({ moTa: item.summaryText || payload.moTa || '' });
+            const rebuilt: AllInOneFormData = {
+                hlTrong49: [],
+                hlNgoai49: [],
+                bai8_cungDuong: 'khong',
+                bai8_hlGiaTien: false,
+                bai8_hlTrenDat: false,
+                bai8_danhSachNghiep: [],
+                bai8_ghiChu: '',
+                tamLinhKhac: [],
+            };
+
+            for (const item of sub.itemsData) {
+                try {
+                    const payload = item.payloadJson ? JSON.parse(item.payloadJson) : {};
+
+                    if (item.categoryKey === 'hl_trong_49_ngay') {
+                        rebuilt.hlTrong49!.push({
+                            hoTen: payload.hoTen || item.displayName || '',
+                            ngayMat: payload.ngayMat || '',
+                            tho: payload.tho || '',
+                            anTangTai: payload.anTangTai || '',
+                        });
+                    } else if (item.categoryKey === 'hl_ngoai_49_ro_ten') {
+                        rebuilt.hlNgoai49!.push({
+                            hoTen: payload.hoTen || item.displayName || '',
+                            ngayMat: payload.ngayMat || '',
+                            tho: payload.tho || '',
+                            anTangTai: payload.anTangTai || '',
+                        });
+                    } else if (item.categoryKey === 'tam_linh_bai_8') {
+                        rebuilt.bai8_cungDuong = payload.cungDuong || 'khong';
+                        rebuilt.bai8_hlGiaTien = payload.hlGiaTien || false;
+                        rebuilt.bai8_hlTrenDat = payload.hlTrenDat || false;
+                        rebuilt.bai8_danhSachNghiep = (payload.danhSachNghiep || []).map((n: { moTa?: string }) => ({ moTa: n.moTa || '' }));
+                        rebuilt.bai8_ghiChu = payload.ghiChu || '';
+                    } else if (item.categoryKey === 'tam_linh_khac') {
+                        rebuilt.tamLinhKhac!.push({ moTa: item.summaryText || payload.moTa || '' });
+                    }
+                } catch {
+                    // Skip malformed items
                 }
-            } catch {
-                // Skip malformed items
             }
-        }
 
-        setFormData(rebuilt);
-        goTo('registration_form');
+            setFormData(rebuilt);
+            goTo('registration_form');
+        } else {
+            // Dynamic form (AVLH, SHCT, B8, etc.) → navigate to the form page
+            // The ceremonyType holds the form key or label
+            const formKey = sub.ceremonyType || sub.registrationLabel;
+            // Use window.location for full page navigation to the direct form link
+            window.location.href = `/dang-ky/${encodeURIComponent(formKey)}`;
+        }
     };
 
     const handleSubmit = async () => {
