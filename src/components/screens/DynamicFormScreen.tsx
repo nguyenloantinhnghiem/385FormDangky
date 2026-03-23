@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2 } from 'lucide-react';
+import FileUpload from '@/components/ui/FileUpload';
+import SignaturePad from '@/components/ui/SignaturePad';
 
 interface DynamicFormScreenProps {
     formType: string;
@@ -235,6 +237,22 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                     </div>
                 );
             }
+            case 'image':
+                return (
+                    <FileUpload
+                        value={(value as string) || ''}
+                        onChange={(url) => onChange(url)}
+                        hint={field.placeholder}
+                    />
+                );
+            case 'signature':
+                return (
+                    <SignaturePad
+                        value={(value as string) || ''}
+                        onChange={(url) => onChange(url)}
+                        hint={field.placeholder}
+                    />
+                );
             default:
                 return <Input value={(value as string) || ''} onChange={(e) => onChange(e.target.value)} />;
         }
@@ -397,6 +415,22 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                             </label>
                         ))}
                     </div>
+                );
+            case 'image':
+                return (
+                    <FileUpload
+                        value={(value as string) || ''}
+                        onChange={(url) => handleChange(field.fieldKey, url)}
+                        hint={field.placeholder}
+                    />
+                );
+            case 'signature':
+                return (
+                    <SignaturePad
+                        value={(value as string) || ''}
+                        onChange={(url) => handleChange(field.fieldKey, url)}
+                        hint={field.placeholder}
+                    />
                 );
             default:
                 return <Input value={(value as string) || ''} onChange={(e) => handleChange(field.fieldKey, e.target.value)} />;

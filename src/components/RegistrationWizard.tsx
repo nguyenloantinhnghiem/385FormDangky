@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CEREMONY_MAP } from '@/config/categories';
 import { submitRegistration } from '@/actions/submit';
 import { submitDynamicRegistration } from '@/actions/submit-dynamic';
-import { saveDraft, loadDraft, clearDraft, hasDraft, clearAllDrafts } from '@/lib/utils/draft';
+import { saveDraft, loadDraft, clearDraft, hasDraft, clearAllDrafts, saveProfile } from '@/lib/utils/draft';
 import type { Applicant, CeremonyType, ScreenName } from '@/types';
 import type { AllInOneFormData } from '@/components/screens/RegistrationFormScreen';
 import type { RegistrationType } from '@/actions/settings';
@@ -467,6 +467,10 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             if (result.success && result.code) {
                 setSubmissionCode(result.code);
                 clearDraft(formKey);
+                // Auto-save profile for future forms
+                if (applicant) {
+                    saveProfile({ tinChu: applicant.tinChu, phone: applicant.phone, to: applicant.to || '' });
+                }
                 goTo('success');
             } else {
                 setSubmitError(result.error || 'Đã có lỗi xảy ra. Vui lòng thử lại.');

@@ -1,14 +1,15 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { applicantSchema, type ApplicantFormData } from '@/schemas/applicant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, User } from 'lucide-react';
+import { ArrowRight, User, UserCheck } from 'lucide-react';
+import { loadProfile } from '@/lib/utils/draft';
 import type { Applicant } from '@/types';
 
 interface ApplicantScreenProps {
@@ -18,6 +19,23 @@ interface ApplicantScreenProps {
 }
 
 export default function ApplicantScreen({ defaultValues, onNext, onBack }: ApplicantScreenProps) {
+    // Merge: defaultValues (from draft/lookup) > profile (saved) > empty
+    const mergedDefaults = useMemo(() => {
+        const profile = loadProfile();
+        return {
+            tinChu: defaultValues?.tinChu || profile?.tinChu || '',
+            phone: defaultValues?.phone || profile?.phone || '',
+            daoTrang: defaultValues?.daoTrang || '',
+            to: defaultValues?.to || profile?.to || '',
+            notes: defaultValues?.notes || '',
+        };
+    }, [defaultValues]);
+
+    const hasProfileData = useMemo(() => {
+        const profile = loadProfile();
+        return !!(profile?.tinChu || profile?.phone);
+    }, []);
+
     const {
         register,
         handleSubmit,
@@ -26,13 +44,7 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
     } = useForm<ApplicantFormData>({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resolver: zodResolver(applicantSchema) as any,
-        defaultValues: defaultValues || {
-            tinChu: '',
-            phone: '',
-            daoTrang: '',
-            to: '',
-            notes: '',
-        },
+        defaultValues: mergedDefaults,
         mode: 'onChange',
     });
 
@@ -51,6 +63,14 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
                     <p className="text-sm text-stone-500">Nhập thông tin Tín chủ / Phật tử</p>
                 </div>
             </div>
+
+            {/* Profile auto-fill notice */}
+            {hasProfileData && !defaultValues && (
+                <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-xs animate-fade-in">
+                    <UserCheck className="w-4 h-4 flex-shrink-0" />
+                    <span>Đã tự động điền từ thông tin đã lưu trước đó</span>
+                </div>
+            )}
 
             <Card>
                 <CardHeader className="pb-2">
@@ -116,3 +136,4 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
         </div>
     );
 }
+

@@ -51,3 +51,40 @@ export function clearAllDrafts(): void {
         // silent
     }
 }
+
+// ── Smart Profile ──
+// Saves basic user info permanently so it auto-fills across all forms
+
+const PROFILE_KEY = 'user_profile';
+
+export interface UserProfile {
+    tinChu: string;
+    phone: string;
+    to: string;
+}
+
+export function saveProfile(profile: UserProfile): void {
+    try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    } catch {
+        // silent
+    }
+}
+
+export function loadProfile(): UserProfile | null {
+    try {
+        const raw = localStorage.getItem(PROFILE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw) as UserProfile;
+    } catch {
+        return null;
+    }
+}
+
+export function hasProfile(): boolean {
+    try {
+        return !!localStorage.getItem(PROFILE_KEY);
+    } catch {
+        return false;
+    }
+}
