@@ -329,16 +329,11 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
     const goTo = (s: ScreenName) => setScreen(s);
 
-    // Handle start from landing — receives registration type
+    // Handle start from landing — navigate to the form's dedicated URL
     const handleStart = (regType?: RegistrationType) => {
-        if (regType) setRegistrationType(regType);
-        if (regType?.formType === 'cau_sieu') {
-            // Legacy cau_sieu flow → ceremony select
-            goTo('ceremony_select');
-        } else {
-            // Other types → skip ceremony select (use reg type label as ceremony)
-            goTo('applicant');
-        }
+        if (!regType) return;
+        // Navigate to the form's own page so URL changes
+        router.push(`/dang-ky/${encodeURIComponent(regType.key)}`);
     };
 
     const handleCeremonySelect = (type: CeremonyType) => {
