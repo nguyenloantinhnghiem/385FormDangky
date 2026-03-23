@@ -21,7 +21,7 @@ import SuccessScreen from '@/components/screens/SuccessScreen';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, AlertCircle, Edit2, ArrowLeft, Send } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Edit2, ArrowLeft, Send, Search } from 'lucide-react';
 
 // Inline Dynamic Summary component
 function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, isSubmitting, submitError, onEdit, onSubmit, onBack }: {
@@ -512,11 +512,22 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                                 {registrationType?.label || 'Đăng Ký'}
                             </h1>
                         </div>
-                        {ceremonyType && !isDynamic && (
-                            <Badge variant="outline" className="text-xs">
-                                {CEREMONY_MAP.get(ceremonyType)?.shortLabel}
-                            </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {ceremonyType && !isDynamic && (
+                                <Badge variant="outline" className="text-xs">
+                                    {CEREMONY_MAP.get(ceremonyType)?.shortLabel}
+                                </Badge>
+                            )}
+                            {screen !== 'lookup' && (
+                                <button
+                                    onClick={() => goTo('lookup')}
+                                    className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200/50 flex items-center justify-center text-blue-600 hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                                    title="Tra cứu đăng ký cũ"
+                                >
+                                    <Search className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
