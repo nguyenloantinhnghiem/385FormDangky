@@ -498,8 +498,8 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-amber-50/80 via-stone-50 to-blue-50/30">
             {screen !== 'landing' && screen !== 'success' && (
-                <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-stone-200 px-4 py-3">
-                    <div className="max-w-lg mx-auto flex items-center justify-between">
+                <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-stone-200 px-4 md:px-8 py-3">
+                    <div className="max-w-lg md:max-w-xl lg:max-w-2xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <a
                                 href="/"
@@ -532,7 +532,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                 </div>
             )}
 
-            <div className="max-w-lg mx-auto px-4 py-6">
+            <div className={`mx-auto px-4 md:px-6 py-6 ${screen === 'landing' ? '' : 'max-w-lg md:max-w-xl lg:max-w-2xl'}`}>
                 {draftLoaded && screen !== 'landing' && (
                     <div className="bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2 text-xs mb-4 animate-fade-in">
                         ✨ Đã khôi phục bản nháp trước đó

@@ -97,15 +97,15 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-300/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-orange-300/15 to-transparent rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
 
-                <div className="relative max-w-lg mx-auto px-4 pt-12 pb-8 text-center animate-fade-in">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-4xl shadow-xl shadow-amber-500/25 mb-6">
+                <div className="relative max-w-2xl mx-auto px-4 pt-10 md:pt-16 pb-8 text-center animate-fade-in">
+                    <div className="inline-flex items-center justify-center w-16 h-16 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-3xl md:text-5xl shadow-xl shadow-amber-500/25 mb-4 md:mb-6">
                         🙏
                     </div>
-                    <h1 className="text-2xl font-extrabold bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 bg-clip-text text-transparent mb-2">
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-amber-700 via-orange-600 to-amber-700 bg-clip-text text-transparent mb-2">
                         {title}
                     </h1>
                     {subtitle && (
-                        <p className="text-stone-500 text-sm max-w-xs mx-auto mb-1">{subtitle}</p>
+                        <p className="text-stone-500 text-sm md:text-base max-w-md mx-auto mb-1">{subtitle}</p>
                     )}
 
                     {/* Schedule status badge */}
@@ -136,7 +136,7 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
             </div>
 
             {/* ── Main Content ── */}
-            <div className="max-w-lg mx-auto px-4 pb-12">
+            <div className="max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto px-4 pb-12">
                 {/* Warning */}
                 {config?.formWarning && (
                     <div className="mb-4 bg-red-50/80 backdrop-blur border border-red-200/60 rounded-xl px-4 py-3 text-sm text-red-700 font-medium shadow-sm">
@@ -195,7 +195,7 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
 
                 {/* Registration cards */}
                 {!isClosed && (
-                    <div className="space-y-3">
+                    <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-3">
                         {selectedParent ? (
                             <>
                                 <button
@@ -219,7 +219,7 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
                             </Button>
                         ) : (
                             <>
-                                <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1">Chọn loại đăng ký</p>
+                                <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-1 md:col-span-2">Chọn loại đăng ký</p>
                                 {rootTypes.map((rt) => (
                                     <FormCard key={rt.key} rt={rt} onClick={() => handleTypeClick(rt)} />
                                 ))}
@@ -227,7 +227,7 @@ export default function LandingScreen({ onStart, onLookup }: LandingScreenProps)
                         )}
 
                         {/* Lookup / Re-register — Prominent */}
-                        <div className="pt-4 mt-2 border-t border-stone-200/40">
+                        <div className="pt-4 mt-2 border-t border-stone-200/40 md:col-span-2">
                             <button
                                 onClick={onLookup}
                                 className="w-full group flex items-center gap-3.5 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200/60 shadow-sm hover:shadow-md hover:border-blue-300 hover:from-blue-100 hover:to-indigo-100 transition-all text-left"
@@ -271,18 +271,18 @@ function FormCard({ rt, onClick }: { rt: RegistrationType; onClick: () => void }
     return (
         <button
             onClick={onClick}
-            className="w-full group flex items-center gap-3.5 p-4 rounded-xl bg-white/70 backdrop-blur border border-stone-200/50 shadow-sm hover:shadow-md hover:border-amber-300/60 hover:bg-white/90 transition-all text-left"
+            className="w-full group flex items-center gap-3.5 p-4 md:p-5 rounded-xl bg-white/70 backdrop-blur border border-stone-200/50 shadow-sm hover:shadow-lg hover:border-amber-300/60 hover:bg-white/90 hover:scale-[1.02] transition-all text-left"
         >
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/30 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-11 h-11 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/30 flex items-center justify-center text-xl md:text-2xl flex-shrink-0 group-hover:scale-110 transition-transform">
                 {rt.icon}
             </div>
             <div className="flex-1 min-w-0">
-                <p className="font-semibold text-stone-800 text-sm truncate">{rt.label}</p>
+                <p className="font-semibold text-stone-800 text-sm md:text-base truncate">{rt.label}</p>
                 {rt.description && (
-                    <p className="text-xs text-stone-400 truncate">{rt.description}</p>
+                    <p className="text-xs md:text-sm text-stone-400 truncate">{rt.description}</p>
                 )}
             </div>
-            <ArrowRight className="w-4 h-4 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+            <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-stone-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
         </button>
     );
 }
