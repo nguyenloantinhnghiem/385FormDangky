@@ -276,11 +276,26 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
         }
     }, [initialRegType]);
 
-    // On direct link: clear old draft for this form to start fresh
+    // On direct link: check for re-register data first, or clear old draft
     useEffect(() => {
         if (initialRegType) {
+            // Check for reregister data (saved by lookup flow)
+            try {
+                const reregRaw = localStorage.getItem('reregister_data');
+                if (reregRaw) {
+                    localStorage.removeItem('reregister_data');
+                    const reregData = JSON.parse(reregRaw);
+                    if (reregData.applicant) {
+                        setApplicant(reregData.applicant);
+                        // Go directly to applicant screen with data pre-filled
+                        setScreen('applicant');
+                        return; // Don't clear drafts — we want the data
+                    }
+                }
+            } catch {
+                // ignore
+            }
             clearDraft(initialRegType.key);
-            // Also clear legacy shared draft
             clearAllDrafts();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -430,8 +445,21 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             goTo('registration_form');
         } else {
             // Dynamic form (AVLH, SHCT, B8, etc.) → navigate to the form page
-            // The ceremonyType holds the form key or label
+            // Save applicant data so it can be restored on the form page
             const formKey = sub.ceremonyType || sub.registrationLabel;
+            try {
+                localStorage.setItem('reregister_data', JSON.stringify({
+                    applicant: {
+                        tinChu: sub.applicantName,
+                        phone: sub.applicantPhone,
+                        daoTrang: '',
+                        to: sub.applicantTo || '',
+                        notes: '',
+                    },
+                }));
+            } catch {
+                // ignore
+            }
             // Use window.location for full page navigation to the direct form link
             window.location.href = `/dang-ky/${encodeURIComponent(formKey)}`;
         }
