@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { getRegistrationTypes, getLandingConfig } from '@/actions/settings';
 import RegistrationWizard from '@/components/RegistrationWizard';
 
@@ -19,12 +20,12 @@ function ClosedMessage({ label, message }: { label: string; message?: string }) 
                         {message || 'Đăng ký đã đóng hoặc hết hạn. Vui lòng quay lại sau.'}
                     </p>
                 </div>
-                <a
+                <Link
                     href="/"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
                 >
                     ← Về trang chủ
-                </a>
+                </Link>
             </div>
         </div>
     );

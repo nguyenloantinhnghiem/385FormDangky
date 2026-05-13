@@ -220,7 +220,7 @@ export default function RegistrationFormScreen({ defaultValues, onNext, onBack }
             </div>
 
             <p className="text-xs text-stone-400 mb-4 px-1">
-                💡 Mỗi mục có nút <strong>"+ Thêm"</strong> để thêm nhiều hương linh hoặc nhiều nội dung.
+                💡 Mỗi mục có nút <strong>&quot;+ Thêm&quot;</strong> để thêm nhiều hương linh hoặc nhiều nội dung.
                 Chỉ điền những mục bạn cần.
             </p>
 

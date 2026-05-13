@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { lookupByPhone } from '@/actions/lookup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,8 @@ interface PastSubmission {
     submissionId: string;
     submissionCode: string;
     createdAt: string;
+    registrationKey: string;
+    formType: string;
     ceremonyType: string;
     ceremonyLabel: string;
     applicantName: string;
@@ -21,6 +23,7 @@ interface PastSubmission {
     totalItems: string;
     categoriesText: string;
     registrationLabel: string;
+    formData: Record<string, unknown> | null;
     itemsData: {
         categoryKey: string;
         categoryLabel: string;
@@ -131,8 +134,8 @@ export default function LookupScreen({ onSelectPast, onBack }: LookupScreenProps
                                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 <option value="">-- Tất cả loại --</option>
-                                {regTypes.filter(r => r.open).map((rt) => (
-                                    <option key={rt.key} value={rt.label}>{rt.label}</option>
+                                {regTypes.map((rt) => (
+                                    <option key={rt.key} value={rt.key}>{rt.label}</option>
                                 ))}
                             </select>
                         </div>
@@ -148,7 +151,11 @@ export default function LookupScreen({ onSelectPast, onBack }: LookupScreenProps
                             <CardContent className="p-6 text-center">
                                 <p className="text-stone-500 text-sm">
                                     😔 Không tìm thấy đăng ký nào với SĐT <strong>{phone}</strong>
-                                    {formFilter && <span className="block mt-1 text-xs text-stone-400">Loại: {formFilter}</span>}
+                                    {formFilter && (
+                                        <span className="block mt-1 text-xs text-stone-400">
+                                            Loại: {regTypes.find((rt) => rt.key === formFilter)?.label || formFilter}
+                                        </span>
+                                    )}
                                 </p>
                                 <p className="text-stone-400 text-xs mt-2">
                                     Hãy kiểm tra lại số hoặc thử bỏ bộ lọc

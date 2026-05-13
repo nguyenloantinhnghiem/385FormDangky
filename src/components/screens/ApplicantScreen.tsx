@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { applicantSchema, type ApplicantFormData } from '@/schemas/applicant';
@@ -39,14 +39,18 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
     const {
         register,
         handleSubmit,
+        reset,
         formState: { errors, isValid },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } = useForm<ApplicantFormData>({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resolver: zodResolver(applicantSchema) as any,
         defaultValues: mergedDefaults,
         mode: 'onChange',
     });
+
+    useEffect(() => {
+        reset(mergedDefaults);
+    }, [mergedDefaults, reset]);
 
     const onSubmit = (data: ApplicantFormData) => {
         onNext(data as Applicant);
@@ -136,4 +140,3 @@ export default function ApplicantScreen({ defaultValues, onNext, onBack }: Appli
         </div>
     );
 }
-

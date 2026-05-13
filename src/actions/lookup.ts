@@ -12,6 +12,8 @@ interface LookupSubmission {
     submissionId: string;
     submissionCode: string;
     createdAt: string;
+    registrationKey: string;
+    formType: string;
     ceremonyType: string;
     ceremonyLabel: string;
     applicantName: string;
@@ -20,6 +22,7 @@ interface LookupSubmission {
     totalItems: string;
     categoriesText: string;
     registrationLabel: string;
+    formData: Record<string, unknown> | null;
     itemsData: {
         categoryKey: string;
         categoryLabel: string;
@@ -100,6 +103,70 @@ function getPhone(row: Record<string, string>): string {
     return '';
 }
 
+const LEGACY_CAU_SIEU_TYPES = new Set(['trai_tang', 'trai_vien', 'tuy_duyen', 'cau_sieu']);
+
+function resolveRegistrationType(
+    regTypes: RegistrationType[],
+    ceremonyType: string,
+    ceremonyLabel: string,
+): RegistrationType | undefined {
+    return regTypes.find((rt) =>
+        rt.key === ceremonyType
+        || rt.formType === ceremonyType
+        || rt.label === ceremonyLabel
+        || rt.key === ceremonyLabel
+        || rt.formType === ceremonyLabel
+    );
+}
+
+function matchesFormFilter(
+    formTypeFilter: string | undefined,
+    regType: RegistrationType | undefined,
+    ceremonyType: string,
+    ceremonyLabel: string,
+): boolean {
+    if (!formTypeFilter) return true;
+    return [
+        regType?.key,
+        regType?.formType,
+        regType?.label,
+        ceremonyType,
+        ceremonyLabel,
+    ].filter(Boolean).includes(formTypeFilter);
+}
+
+function parseObjectJson(raw: string): Record<string, unknown> | null {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            return parsed as Record<string, unknown>;
+        }
+    } catch {
+        // ignore malformed historical rows
+    }
+    return null;
+}
+
+function getDynamicFormData(
+    items: LookupSubmission['itemsData'],
+    regType: RegistrationType | undefined,
+    ceremonyType: string,
+): Record<string, unknown> | null {
+    const resolvedFormType = regType?.formType || ceremonyType;
+    if (LEGACY_CAU_SIEU_TYPES.has(resolvedFormType) || LEGACY_CAU_SIEU_TYPES.has(ceremonyType)) {
+        return null;
+    }
+
+    const preferredItem = items.find((item) =>
+        item.categoryKey === resolvedFormType
+        || item.categoryKey === regType?.key
+        || item.categoryLabel === regType?.label
+    ) || items[0];
+
+    return preferredItem ? parseObjectJson(preferredItem.payloadJson) : null;
+}
+
 export async function lookupByPhone(phone: string, formTypeFilter?: string): Promise<LookupResult> {
     try {
         const searchPhone = normalizePhone(phone);
@@ -126,11 +193,10 @@ export async function lookupByPhone(phone: string, formTypeFilter?: string): Pro
             const subId = get(s, 'submission_id', 'Mã đăng ký', 'Mã đăng ký (ID)');
             const ceremonyType = get(s, 'ceremony_type', 'Loại lễ', 'Loại đăng ký');
             const ceremonyLabel = get(s, 'ceremony_label', 'Tên loại lễ', 'Tên đăng ký');
+            const regType = resolveRegistrationType(regTypes, ceremonyType, ceremonyLabel);
 
             // Apply form type filter
-            if (formTypeFilter) {
-                if (ceremonyType !== formTypeFilter && ceremonyLabel !== formTypeFilter) continue;
-            }
+            if (!matchesFormFilter(formTypeFilter, regType, ceremonyType, ceremonyLabel)) continue;
 
             // Get items for this submission
             const items = structuredItems
@@ -147,6 +213,8 @@ export async function lookupByPhone(phone: string, formTypeFilter?: string): Pro
                 submissionId: subId,
                 submissionCode: get(s, 'submission_code', 'Mã tra cứu'),
                 createdAt: get(s, 'created_at', 'Ngày tạo'),
+                registrationKey: regType?.key || ceremonyType,
+                formType: regType?.formType || ceremonyType,
                 ceremonyType,
                 ceremonyLabel,
                 applicantName: get(s, 'applicant_name', 'Tên tín chủ', 'Tín chủ/Phật tử', 'Tín chủ'),
@@ -155,6 +223,7 @@ export async function lookupByPhone(phone: string, formTypeFilter?: string): Pro
                 totalItems: get(s, 'total_items', 'Số mục', 'Tổng số mục') || String(items.length),
                 categoriesText: get(s, 'categories_text', 'Danh mục', 'Danh sách loại mục'),
                 registrationLabel: ceremonyLabel || ceremonyType,
+                formData: getDynamicFormData(items, regType, ceremonyType),
                 itemsData: items,
             };
 
@@ -175,8 +244,9 @@ export async function lookupByPhone(phone: string, formTypeFilter?: string): Pro
             const summaryId = `summary_${stt}`;
 
             const regLabel = get(s, 'Loại đăng ký', 'Loại lễ');
+            const regType = resolveRegistrationType(regTypes, regLabel, regLabel);
 
-            if (formTypeFilter && regLabel !== formTypeFilter) continue;
+            if (!matchesFormFilter(formTypeFilter, regType, regLabel, regLabel)) continue;
 
             // Check if this entry already exists in results (by matching name + date)
             const applicantName = get(s, 'Tín chủ', 'Tín chủ/Phật tử');
@@ -191,6 +261,8 @@ export async function lookupByPhone(phone: string, formTypeFilter?: string): Pro
                 submissionId: summaryId,
                 submissionCode: `TH-${stt}`,
                 createdAt: get(s, 'Ngày gửi', 'Ngày tạo') || '',
+                registrationKey: regType?.key || regLabel,
+                formType: regType?.formType || regLabel,
                 ceremonyType: regLabel,
                 ceremonyLabel: regLabel,
                 applicantName,
@@ -199,6 +271,7 @@ export async function lookupByPhone(phone: string, formTypeFilter?: string): Pro
                 totalItems: '1',
                 categoriesText: regLabel,
                 registrationLabel: regLabel,
+                formData: null,
                 itemsData: chiTiet ? [{
                     categoryKey: regLabel,
                     categoryLabel: regLabel,

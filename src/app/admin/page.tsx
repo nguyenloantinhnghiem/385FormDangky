@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { adminListSubmissions, adminGetSubmission } from '@/actions/admin';
 import { getRegistrationTypes, type RegistrationType } from '@/actions/settings';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,6 @@ export default function AdminPage() {
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState('');
     const [submissions, setSubmissions] = useState<Record<string, string>[]>([]);
-    const [filtered, setFiltered] = useState<Record<string, string>[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
     const [loading, setLoading] = useState(false);
@@ -29,7 +28,7 @@ export default function AdminPage() {
     } | null>(null);
 
     // Filter submissions when search changes
-    useEffect(() => {
+    const filtered = useMemo(() => {
         let result = submissions;
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
@@ -45,7 +44,7 @@ export default function AdminPage() {
                 s.categories_text?.toLowerCase().includes(categoryFilter.toLowerCase())
             );
         }
-        setFiltered(result);
+        return result;
     }, [submissions, searchTerm, categoryFilter]);
 
     const handleLogin = async () => {
@@ -54,7 +53,6 @@ export default function AdminPage() {
         const result = await adminListSubmissions(password);
         if (result.success && result.data) {
             setSubmissions(result.data);
-            setFiltered(result.data);
             // Also fetch reg types for link management
             const types = await getRegistrationTypes();
             setRegTypes(types);

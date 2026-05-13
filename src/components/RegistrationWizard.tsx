@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CEREMONY_MAP } from '@/config/categories';
 import { submitRegistration } from '@/actions/submit';
@@ -229,6 +230,42 @@ interface WizardProps {
     initialRegType?: RegistrationType;
 }
 
+interface ReregisterData {
+    applicant: Applicant;
+    formData?: Record<string, unknown> | null;
+    registrationKey?: string;
+    formType?: string;
+}
+
+const LEGACY_CAU_SIEU_TYPES = new Set(['trai_tang', 'trai_vien', 'tuy_duyen', 'cau_sieu']);
+
+function parsePayloadObject(raw: string): Record<string, unknown> | null {
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            return parsed as Record<string, unknown>;
+        }
+    } catch {
+        // ignore malformed historical data
+    }
+    return null;
+}
+
+function getPastDynamicFormData(sub: PastSubmission): Record<string, unknown> | null {
+    if (sub.formData && Object.keys(sub.formData).length > 0) {
+        return sub.formData;
+    }
+
+    const preferredItem = sub.itemsData.find((item) =>
+        item.categoryKey === sub.formType
+        || item.categoryKey === sub.registrationKey
+        || item.categoryLabel === sub.registrationLabel
+    ) || sub.itemsData[0];
+
+    return preferredItem ? parsePayloadObject(preferredItem.payloadJson) : null;
+}
+
 export default function RegistrationWizard({ initialRegType }: WizardProps) {
     const router = useRouter();
 
@@ -283,11 +320,25 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             try {
                 const reregRaw = localStorage.getItem('reregister_data');
                 if (reregRaw) {
+                    const reregData = JSON.parse(reregRaw) as Partial<ReregisterData>;
+                    const matchesCurrentForm = (!reregData.registrationKey && !reregData.formType)
+                        || reregData.registrationKey === initialRegType.key
+                        || reregData.formType === initialRegType.formType;
+
                     localStorage.removeItem('reregister_data');
-                    const reregData = JSON.parse(reregRaw);
+                    if (!matchesCurrentForm) {
+                        clearDraft(initialRegType.key);
+                        clearAllDrafts();
+                        return;
+                    }
+
                     if (reregData.applicant) {
                         setApplicant(reregData.applicant);
-                        // Go directly to applicant screen with data pre-filled
+                        if (initialRegType.formType !== 'cau_sieu' && reregData.formData) {
+                            setDynamicFormData(reregData.formData);
+                        }
+                        // Go directly to applicant screen with data pre-filled.
+                        // The next form screen receives the old form data as defaults.
                         setScreen('applicant');
                         return; // Don't clear drafts — we want the data
                     }
@@ -378,24 +429,27 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
     // Handle re-registration from lookup
     const handleSelectPast = (sub: PastSubmission) => {
-        // Set applicant info (always pre-fill)
-        setApplicant({
+        const pastApplicant: Applicant = {
             tinChu: sub.applicantName,
             phone: sub.applicantPhone,
             daoTrang: '',
             to: sub.applicantTo || '',
             notes: '',
-        });
+        };
+
+        // Set applicant info (always pre-fill)
+        setApplicant(pastApplicant);
 
         // Check if this is a legacy Cầu Siêu submission
-        const isCauSieu = sub.ceremonyType === 'trai_tang'
-            || sub.ceremonyType === 'trai_vien'
-            || sub.ceremonyType === 'tuy_duyen'
-            || sub.ceremonyType === 'cau_sieu';
+        const isCauSieu = LEGACY_CAU_SIEU_TYPES.has(sub.formType)
+            || LEGACY_CAU_SIEU_TYPES.has(sub.ceremonyType);
 
         if (isCauSieu) {
             // Legacy Cầu Siêu flow → rebuild form data
             const ct = sub.ceremonyType as CeremonyType;
+            setRegistrationType(null);
+            setDynamicFormData(null);
+            setDynamicFieldLabels({});
             setCeremonyType(ct);
 
             const rebuilt: AllInOneFormData = {
@@ -445,23 +499,34 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             goTo('registration_form');
         } else {
             // Dynamic form (AVLH, SHCT, B8, etc.) → navigate to the form page
-            // Save applicant data so it can be restored on the form page
-            const formKey = sub.ceremonyType || sub.registrationLabel;
+            // Save applicant + form data so both can be restored on the form page.
+            const targetKey = sub.registrationKey || sub.formType || sub.ceremonyType || sub.registrationLabel;
+            const pastFormData = getPastDynamicFormData(sub);
+            if (!targetKey.trim()) {
+                alert('Không xác định được đường dẫn của form đăng ký cũ. Vui lòng chọn loại đăng ký từ trang chủ.');
+                return;
+            }
+
+            if (initialRegType && (targetKey === initialRegType.key || sub.formType === initialRegType.formType)) {
+                setDynamicFormData(pastFormData);
+                setDynamicFieldLabels({});
+                setSubmitError(null);
+                goTo('applicant');
+                return;
+            }
+
             try {
                 localStorage.setItem('reregister_data', JSON.stringify({
-                    applicant: {
-                        tinChu: sub.applicantName,
-                        phone: sub.applicantPhone,
-                        daoTrang: '',
-                        to: sub.applicantTo || '',
-                        notes: '',
-                    },
+                    applicant: pastApplicant,
+                    formData: pastFormData,
+                    registrationKey: targetKey,
+                    formType: sub.formType,
                 }));
             } catch {
                 // ignore
             }
             // Use window.location for full page navigation to the direct form link
-            window.location.href = `/dang-ky/${encodeURIComponent(formKey)}`;
+            window.location.href = `/dang-ky/${encodeURIComponent(targetKey)}`;
         }
     };
 
@@ -528,13 +593,13 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                 <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-stone-200 px-4 md:px-8 py-3">
                     <div className="max-w-lg md:max-w-xl lg:max-w-2xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <a
+                            <Link
                                 href="/"
                                 className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/50 flex items-center justify-center text-amber-600 hover:bg-amber-100 hover:border-amber-300 transition-colors"
                                 title="Về trang chủ"
                             >
                                 🏠
-                            </a>
+                            </Link>
                             <h1 className="text-sm font-bold text-amber-600">
                                 {registrationType?.label || 'Đăng Ký'}
                             </h1>
