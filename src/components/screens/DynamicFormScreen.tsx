@@ -7,21 +7,81 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2, RotateCcw } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2, RotateCcw, User } from 'lucide-react';
 import FileUpload from '@/components/ui/FileUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
+import type { Applicant } from '@/types';
 
 interface DynamicFormScreenProps {
     formType: string;
     formLabel: string;
     videoUrl?: string;
     defaultValues?: Record<string, unknown>;
+    applicant?: Applicant | null;
     isReregistering?: boolean;
+    onEditApplicant?: () => void;
     onNext: (data: Record<string, unknown>, fieldLabels: Record<string, string>) => void;
     onBack: () => void;
 }
 
-export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, isReregistering = false, onNext, onBack }: DynamicFormScreenProps) {
+function normalizeKey(value: string): string {
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/đ/g, 'd')
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function hasMeaningfulValue(value: unknown): boolean {
+    if (value === undefined || value === null || value === false) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (Array.isArray(value)) {
+        return value.some((item) => {
+            if (typeof item === 'object' && item !== null) {
+                return Object.values(item).some(hasMeaningfulValue);
+            }
+            return hasMeaningfulValue(item);
+        });
+    }
+    if (typeof value === 'object') return Object.values(value).some(hasMeaningfulValue);
+    return true;
+}
+
+function getHistoricalDetail(values: Record<string, unknown>): string {
+    for (const key of ['chi_tiet', 'chiTiet', 'detail', 'noi_dung_cu']) {
+        const value = values[key];
+        if (typeof value === 'string' && value.trim()) return value;
+    }
+    return '';
+}
+
+function getApplicantDefault(field: FormFieldDef, applicant?: Applicant | null): string | undefined {
+    if (!applicant) return undefined;
+
+    const key = normalizeKey(field.fieldKey);
+    const label = normalizeKey(field.fieldLabel);
+    const haystack = `${key} ${label}`;
+
+    const nameSignals = [
+        'tin_chu', 'phat_tu', 'phap_danh', 'ho_ten', 'ho_va_ten',
+        'nguoi_dang_ky', 'ten_nguoi_dang_ky', 'applicant_name',
+    ];
+    const phoneSignals = [
+        'sdt', 'so_dien_thoai', 'dien_thoai', 'phone', 'applicant_phone',
+    ];
+    const groupSignals = [
+        'thuoc_to', 'to_nhom', 'to_dang_ky', 'to_nao', 'applicant_to',
+    ];
+
+    if (nameSignals.some((signal) => haystack.includes(signal))) return applicant.tinChu || undefined;
+    if (phoneSignals.some((signal) => haystack.includes(signal))) return applicant.phone || undefined;
+    if (groupSignals.some((signal) => haystack.includes(signal))) return applicant.to || undefined;
+    return undefined;
+}
+
+export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, applicant, isReregistering = false, onEditApplicant, onNext, onBack }: DynamicFormScreenProps) {
     const [sections, setSections] = useState<FormSection[]>([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState<Record<string, unknown>>(defaultValues || {});
@@ -31,20 +91,52 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         getFormFields(formType).then((s) => {
             setSections(s);
             const defaults: Record<string, unknown> = { ...(defaultValues || {}) };
+            const historicalDetail = getHistoricalDetail(defaults);
+            const hasMappedData = Object.entries(defaults).some(([key, value]) =>
+                !['chi_tiet', 'chiTiet', 'detail', 'noi_dung_cu'].includes(key) && hasMeaningfulValue(value)
+            );
+            let filledHistoricalDetail = false;
+
             for (const sec of s) {
                 for (const f of sec.fields) {
                     if (f.groupKey) continue; // sub-fields init handled by group
-                    if (defaults[f.fieldKey] === undefined) {
+
+                    if (f.fieldType === 'group') {
+                        if (!hasMappedData && historicalDetail && !filledHistoricalDetail && !hasMeaningfulValue(defaults[f.fieldKey])) {
+                            const subFields = s
+                                .flatMap((section) => section.fields)
+                                .filter((subField) => subField.groupKey === f.fieldKey);
+                            const detailField = subFields.find((subField) => subField.fieldType === 'textarea')
+                                || subFields.find((subField) => subField.fieldType === 'text')
+                                || subFields[0];
+
+                            if (detailField?.subFieldKey) {
+                                defaults[f.fieldKey] = [{ [detailField.subFieldKey]: historicalDetail }];
+                                filledHistoricalDetail = true;
+                            }
+                        }
+
+                        if (defaults[f.fieldKey] === undefined) defaults[f.fieldKey] = [{}];
+                        continue;
+                    }
+
+                    const applicantDefault = getApplicantDefault(f, applicant);
+
+                    if (!hasMeaningfulValue(defaults[f.fieldKey]) && applicantDefault !== undefined) {
+                        defaults[f.fieldKey] = applicantDefault;
+                    } else if (!hasMappedData && historicalDetail && !filledHistoricalDetail && f.fieldType === 'textarea') {
+                        defaults[f.fieldKey] = historicalDetail;
+                        filledHistoricalDetail = true;
+                    } else if (defaults[f.fieldKey] === undefined) {
                         if (f.fieldType === 'checkbox') defaults[f.fieldKey] = false;
                         else if (f.fieldType === 'multichoice') defaults[f.fieldKey] = [];
-                        else if (f.fieldType === 'group') defaults[f.fieldKey] = [{}]; // start with 1 empty entry
                         else defaults[f.fieldKey] = '';
                     }
                 }
             }
             setFormData(defaults);
         }).finally(() => setLoading(false));
-    }, [formType, defaultValues]);
+    }, [formType, defaultValues, applicant]);
 
     const handleChange = (key: string, value: unknown) => {
         setFormData((prev) => ({ ...prev, [key]: value }));
@@ -490,6 +582,37 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         <p className="text-sm text-blue-800 leading-snug">
                             Dữ liệu đăng ký cũ đã được nạp vào form này. Vui lòng kiểm tra lại từng mục trước khi tiếp tục.
                         </p>
+                    </CardContent>
+                </Card>
+            )}
+
+            {isReregistering && applicant && (
+                <Card className="mb-4 border-amber-200 bg-amber-50/40">
+                    <CardHeader className="pb-1 pt-3 px-3 flex-row items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-amber-700" />
+                            <CardTitle className="text-xs uppercase tracking-wide text-amber-700">
+                                Thông tin người đăng ký
+                            </CardTitle>
+                        </div>
+                        {onEditApplicant && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={onEditApplicant}
+                                className="h-7 px-2 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-100"
+                            >
+                                Sửa
+                            </Button>
+                        )}
+                    </CardHeader>
+                    <CardContent className="px-3 pb-3 pt-1">
+                        <p className="text-sm font-semibold text-stone-800">{applicant.tinChu || 'Chưa có tên'}</p>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                            <span className="text-xs text-stone-600">SĐT: {applicant.phone || 'Chưa có'}</span>
+                            {applicant.to && <span className="text-xs text-stone-600">{applicant.to}</span>}
+                        </div>
                     </CardContent>
                 </Card>
             )}

@@ -694,7 +694,9 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                         formLabel={registrationType.label}
                         videoUrl={registrationType.videoUrl}
                         defaultValues={dynamicFormData || undefined}
+                        applicant={applicant}
                         isReregistering={isReregistering}
+                        onEditApplicant={() => goTo('applicant')}
                         onNext={handleDynamicFormNext}
                         onBack={() => goTo('applicant')}
                     />
