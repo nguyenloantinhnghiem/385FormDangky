@@ -62,6 +62,29 @@ Bạn sẽ tạo một hệ thống đăng ký riêng, gồm:
 5. Nhấn **Create fork**
 6. ✅ Chờ vài giây — bạn đã có bản code riêng tại `github.com/TEN_CUA_BAN/FormDangky`
 
+### 2b. Cập nhật fork khi bản gốc có tính năng mới
+
+Sau này nếu dự án gốc có bản cập nhật mới, bạn có thể đồng bộ code mới về fork của mình.
+
+**Cách dễ nhất trên GitHub:**
+1. Mở repo fork của bạn: `github.com/TEN_CUA_BAN/FormDangky`
+2. Ở tab **Code**, nhấn **Sync fork**
+3. Nhấn **Update branch**
+4. Nếu repo đang nối với Vercel, Vercel sẽ tự deploy lại sau khi GitHub sync xong.
+
+**Nếu nút Sync fork báo conflict, dùng Command Prompt:**
+```cmd
+cd %USERPROFILE%\Desktop\FormDangky
+git remote add upstream https://github.com/Hoanq1003/FormDangky.git
+git fetch upstream
+git checkout main
+git merge upstream/main
+git push origin main
+```
+
+> Nếu dòng `git remote add upstream ...` báo đã tồn tại, bỏ qua dòng đó rồi chạy tiếp từ `git fetch upstream`.
+> Nếu có conflict, cần sửa file bị conflict trước, sau đó chạy `git add .`, `git commit`, rồi `git push origin main`.
+
 ---
 
 ## BƯỚC 3 — Tạo Google Sheet + Kết nối API
