@@ -1,54 +1,63 @@
-# Tự động cập nhật fork theo repo gốc
-# Chạy mỗi ngày lúc 2:00 sáng UTC (9:00 sáng VN)
-# Người clone chỉ cần bật Actions 1 lần → fork tự cập nhật mãi mãi
+# Đồng bộ fork với repo gốc khi GitHub không hiện nút "Sync fork".
+# Cách dùng trong repo fork: Actions -> "Đồng bộ từ repo gốc" -> Run workflow.
 
-name: 🔄 Tự động cập nhật từ bản gốc
+name: Đồng bộ từ repo gốc
 
 on:
-  schedule:
-    - cron: '0 2 * * *'   # Mỗi ngày lúc 2:00 UTC = 9:00 VN
-  workflow_dispatch:       # Cho phép chạy thủ công
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch trong repo hiện tại cần cập nhật"
+        required: true
+        default: "main"
+      upstream_branch:
+        description: "Branch của repo gốc cần lấy về"
+        required: true
+        default: "main"
+
+permissions:
+  contents: write
 
 jobs:
   sync:
+    name: Merge upstream vào fork
     runs-on: ubuntu-latest
-    # Chỉ chạy trên fork (không chạy trên repo gốc)
-    if: github.repository != 'Hoanq1003/FormDangky'
-
-    permissions:
-      contents: write
 
     steps:
-      - name: 📥 Checkout fork
+      - name: Checkout target branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.target_branch }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔄 Fetch và merge từ upstream
+      - name: Fetch upstream
         run: |
+          set -euo pipefail
+          git remote remove upstream 2>/dev/null || true
+          git remote add upstream https://github.com/Hoanq1003/FormDangky.git
+          git fetch upstream "${{ inputs.upstream_branch }}"
+
+      - name: Merge và push
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Thêm upstream
-          git remote add upstream https://github.com/Hoanq1003/FormDangky.git || true
-          
-          # Fetch upstream
-          git fetch upstream main
-          
-          # Kiểm tra có gì mới không
-          BEHIND=$(git rev-list --count HEAD..upstream/main)
-          
-          if [ "$BEHIND" -gt 0 ]; then
-            echo "🔄 Có $BEHIND commit mới từ bản gốc. Đang cập nhật..."
-            git merge upstream/main --no-edit --allow-unrelated-histories || {
-              echo "⚠️ Có xung đột, dùng upstream version"
-              git checkout --theirs .
-              git add .
-              git commit -m "🔄 Auto-sync: resolve conflicts with upstream" --no-edit
-            }
-            git push origin main
-            echo "✅ Đã cập nhật thành công!"
-          else
-            echo "✅ Fork đã cập nhật rồi, không cần làm gì."
+
+          BEHIND=$(git rev-list --count HEAD..FETCH_HEAD)
+          if [ "$BEHIND" = "0" ]; then
+            echo "Fork đã mới nhất, không cần đồng bộ."
+            exit 0
           fi
+
+          if git merge --ff-only FETCH_HEAD; then
+            echo "Đã cập nhật bằng fast-forward."
+          elif git merge --no-edit FETCH_HEAD; then
+            echo "Đã cập nhật bằng merge commit."
+          else
+            git merge --abort || true
+            echo "::error::Không thể tự đồng bộ vì có conflict. Hãy sync bằng máy cá nhân hoặc tạo PR để xử lý conflict."
+            exit 1
+          fi
+
+          git push origin "HEAD:${{ inputs.target_branch }}"

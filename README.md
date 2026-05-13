@@ -55,6 +55,21 @@ Khi repo gốc `Hoanq1003/FormDangky` có cập nhật mới, người đã fork
 3. Nhấn **Sync fork** → **Update branch**
 4. Nếu repo fork đang kết nối Vercel, Vercel sẽ tự deploy lại sau khi sync xong.
 
+**Nếu không thấy nút Sync fork:**
+
+Nút này chỉ hiện khi GitHub nhận repo của bạn là một **fork thật** của `Hoanq1003/FormDangky`. Nếu bạn tạo repo bằng nút **Deploy with Vercel**, import, upload code, hoặc tạo repo mới rồi copy code vào, GitHub có thể không xem đó là fork nên sẽ không hiện **Sync fork**.
+
+Bạn vẫn có thể đồng bộ bằng workflow có sẵn trong repo:
+1. Mở repo của bạn trên GitHub
+2. Vào tab **Actions**
+3. Nếu GitHub hỏi, nhấn **I understand my workflows, go ahead and enable them**
+4. Chọn workflow **Đồng bộ từ repo gốc**
+5. Nhấn **Run workflow** → giữ `target_branch` là `main` → **Run workflow**
+
+Nếu workflow báo lỗi quyền push, vào **Settings** → **Actions** → **General** → **Workflow permissions**, chọn **Read and write permissions**, lưu lại rồi chạy workflow lần nữa.
+
+Nếu repo của bạn chưa có workflow **Đồng bộ từ repo gốc**, hãy dùng phần dòng lệnh bên dưới để sync một lần. Sau lần sync đó, workflow sẽ xuất hiện trong tab **Actions** cho các lần cập nhật sau.
+
 **Nếu GitHub báo conflict hoặc muốn dùng dòng lệnh:**
 ```bash
 cd FormDangky
