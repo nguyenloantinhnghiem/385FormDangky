@@ -25,16 +25,18 @@ import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle, AlertCircle, Edit2, ArrowLeft, Send, Search } from 'lucide-react';
 
 // Inline Dynamic Summary component
-function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, isSubmitting, submitError, onEdit, onSubmit, onBack }: {
+function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, isSubmitting, submitError, onEditApplicant, onEdit, onSubmit, onBack, isReregistering = false }: {
     registrationLabel: string;
     applicant: Applicant;
     formData: Record<string, unknown>;
     fieldLabels: Record<string, string>;
     isSubmitting: boolean;
     submitError: string | null;
+    onEditApplicant: () => void;
     onEdit: () => void;
     onSubmit: () => void;
     onBack: () => void;
+    isReregistering?: boolean;
 }) {
     const [confirmed, setConfirmed] = useState(false);
 
@@ -57,7 +59,9 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
                     <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-stone-800">Xem lại đăng ký</h2>
+                    <h2 className="text-xl font-bold text-stone-800">
+                        {isReregistering ? 'Kiểm tra lại đăng ký' : 'Xem lại đăng ký'}
+                    </h2>
                     <p className="text-sm text-stone-500">Kiểm tra thông tin trước khi gửi</p>
                 </div>
             </div>
@@ -80,6 +84,9 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
                         <span className="text-sm">👤</span>
                         <CardTitle className="text-xs text-stone-400 uppercase tracking-wide">Người đăng ký</CardTitle>
                     </div>
+                    <Button variant="ghost" size="sm" onClick={onEditApplicant} className="h-7 text-xs gap-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50">
+                        <Edit2 className="w-3 h-3" /> Sửa
+                    </Button>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-4 pb-3 pt-1">
                     <p className="text-sm font-semibold text-stone-800">{applicant.tinChu}</p>
@@ -287,6 +294,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [draftLoaded, setDraftLoaded] = useState(false);
+    const [isReregistering, setIsReregistering] = useState(false);
 
     // Form key for draft isolation
     const formKey = registrationType?.key;
@@ -305,6 +313,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
         setSubmissionCode('');
         setSubmitError(null);
         setDraftLoaded(false);
+        setIsReregistering(false);
         if (initialRegType) {
             // Direct link → full page navigation to home
             window.location.href = '/';
@@ -334,11 +343,14 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
                     if (reregData.applicant) {
                         setApplicant(reregData.applicant);
-                        if (initialRegType.formType !== 'cau_sieu' && reregData.formData) {
-                            setDynamicFormData(reregData.formData);
+                        setIsReregistering(true);
+                        if (initialRegType.formType !== 'cau_sieu') {
+                            setCeremonyType(null);
+                            setFormData(null);
+                            setDynamicFormData(reregData.formData || {});
+                            setScreen('registration_form');
+                            return; // Don't clear drafts — we want the data
                         }
-                        // Go directly to applicant screen with data pre-filled.
-                        // The next form screen receives the old form data as defaults.
                         setScreen('applicant');
                         return; // Don't clear drafts — we want the data
                     }
@@ -398,11 +410,13 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     // Handle start from landing — navigate to the form's dedicated URL
     const handleStart = (regType?: RegistrationType) => {
         if (!regType) return;
+        setIsReregistering(false);
         // Navigate to the form's own page so URL changes
         router.push(`/dang-ky/${encodeURIComponent(regType.key)}`);
     };
 
     const handleCeremonySelect = (type: CeremonyType) => {
+        setIsReregistering(false);
         setCeremonyType(type);
         goTo('applicant');
     };
@@ -450,6 +464,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             setRegistrationType(null);
             setDynamicFormData(null);
             setDynamicFieldLabels({});
+            setIsReregistering(true);
             setCeremonyType(ct);
 
             const rebuilt: AllInOneFormData = {
@@ -508,10 +523,13 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             }
 
             if (initialRegType && (targetKey === initialRegType.key || sub.formType === initialRegType.formType)) {
-                setDynamicFormData(pastFormData);
+                setCeremonyType(null);
+                setFormData(null);
+                setDynamicFormData(pastFormData || {});
                 setDynamicFieldLabels({});
                 setSubmitError(null);
-                goTo('applicant');
+                setIsReregistering(true);
+                goTo('registration_form');
                 return;
             }
 
@@ -583,6 +601,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
         setDynamicFormData(null);
         setDynamicFieldLabels({});
         setSubmissionCode('');
+        setIsReregistering(false);
         clearDraft(formKey);
         goTo('landing');
     };
@@ -603,6 +622,11 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                             <h1 className="text-sm font-bold text-amber-600">
                                 {registrationType?.label || 'Đăng Ký'}
                             </h1>
+                            {isReregistering && (
+                                <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
+                                    Đăng ký lại
+                                </Badge>
+                            )}
                         </div>
                         <div className="flex items-center gap-2">
                             {ceremonyType && !isDynamic && (
@@ -670,6 +694,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                         formLabel={registrationType.label}
                         videoUrl={registrationType.videoUrl}
                         defaultValues={dynamicFormData || undefined}
+                        isReregistering={isReregistering}
                         onNext={handleDynamicFormNext}
                         onBack={() => goTo('applicant')}
                     />
@@ -695,6 +720,8 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                         fieldLabels={dynamicFieldLabels}
                         isSubmitting={isSubmitting}
                         submitError={submitError}
+                        isReregistering={isReregistering}
+                        onEditApplicant={() => goTo('applicant')}
                         onEdit={() => goTo('registration_form')}
                         onSubmit={handleSubmit}
                         onBack={() => goTo('registration_form')}

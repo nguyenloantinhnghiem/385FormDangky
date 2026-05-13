@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2, RotateCcw } from 'lucide-react';
 import FileUpload from '@/components/ui/FileUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
 
@@ -16,11 +16,12 @@ interface DynamicFormScreenProps {
     formLabel: string;
     videoUrl?: string;
     defaultValues?: Record<string, unknown>;
+    isReregistering?: boolean;
     onNext: (data: Record<string, unknown>, fieldLabels: Record<string, string>) => void;
     onBack: () => void;
 }
 
-export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, onNext, onBack }: DynamicFormScreenProps) {
+export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, isReregistering = false, onNext, onBack }: DynamicFormScreenProps) {
     const [sections, setSections] = useState<FormSection[]>([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState<Record<string, unknown>>(defaultValues || {});
@@ -460,13 +461,38 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         <div className="animate-slide-in">
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-amber-600" />
+                    {isReregistering ? (
+                        <RotateCcw className="w-5 h-5 text-amber-600" />
+                    ) : (
+                        <FileText className="w-5 h-5 text-amber-600" />
+                    )}
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-stone-800">{formLabel}</h2>
-                    <p className="text-sm text-stone-500">Điền thông tin đăng ký</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-xl font-bold text-stone-800">{formLabel}</h2>
+                        {isReregistering && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                                <RotateCcw className="w-3 h-3" />
+                                Đăng ký lại
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-sm text-stone-500">
+                        {isReregistering ? 'Kiểm tra và chỉnh sửa thông tin trước khi gửi lại' : 'Điền thông tin đăng ký'}
+                    </p>
                 </div>
             </div>
+
+            {isReregistering && (
+                <Card className="mb-4 border-blue-200 bg-blue-50/50">
+                    <CardContent className="p-3 flex items-start gap-2.5">
+                        <RotateCcw className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-800 leading-snug">
+                            Dữ liệu đăng ký cũ đã được nạp vào form này. Vui lòng kiểm tra lại từng mục trước khi tiếp tục.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Per-form video guide */}
             {videoUrl && (
@@ -535,7 +561,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                     <ArrowLeft className="w-4 h-4" /> Quay lại
                 </Button>
                 <Button onClick={handleSubmit} className="flex-1 gap-2">
-                    Tiếp tục <ArrowRight className="w-4 h-4" />
+                    {isReregistering ? 'Kiểm tra lại' : 'Tiếp tục'} <ArrowRight className="w-4 h-4" />
                 </Button>
             </div>
         </div>
