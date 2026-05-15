@@ -39,10 +39,11 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | **E** | Loại trường | Xem bảng bên dưới | `text` |
 | **F** | Bắt buộc | TRUE / FALSE | `TRUE` |
 | **G** | Gợi ý | Placeholder | `VD: Nguyễn Văn A` |
-| **H** | Lựa chọn | Ngăn bởi dấu `\|` | `Nam\|Nữ` |
+| **H** | Lựa chọn / nhóm cha | Ngăn bởi dấu `\|`, hoặc mã `group`/`block` cha | `Nam\|Nữ` |
 | **I** | Thứ tự | Số | `1` |
 | **J** | Ghi chú | Text nhỏ dưới input | `Ghi theo CCCD` |
 | **K** | Cột riêng | TRUE = cột riêng trong kết quả | `TRUE` |
+| **L** | Điều kiện hiện | `mã_trường=giá_trị` | `loai=Loại A` |
 
 ---
 
@@ -58,6 +59,10 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | `multichoice` | Checkbox chọn nhiều | ✅ `A\|B\|C` |
 | `checkbox` | 1 ô check Có/Không | Không |
 | `group` | Nhóm lặp lại (thêm/bớt) | Không |
+| `block` | Khối trường con cố định, không thêm/bớt | Không |
+| `khoi` / `khối` | Tên khác của `block` | Không |
+| `image` | Tải ảnh | Không |
+| `signature` | Chữ ký | Không |
 
 ---
 
@@ -124,6 +129,36 @@ VD: Chỉ hiện trường "Mô tả" khi chọn nghiệp "TTTS":
 | mo_ta_ttts | Mô tả TTTS | textarea | `nghiep_chon=TTTS` |
 
 > Cột L (Điều kiện hiện): `mã_trường=giá_trị`
+
+### 5d. Khối điều kiện (block)
+
+`block` giống `group` ở chỗ có các trường con, nhưng chỉ có **1 khối cố định** và **không có nút thêm/bớt**. Dùng khi chọn mục A thì hiện cả cụm trường riêng của mục A.
+
+VD: Chọn "Loại A" thì hiện khối gồm "Hình thức" và "Số lần":
+
+| A | B | C | D | E | H | I | L |
+|---|---|---|---|---|---|---|---|
+| mau_form | Đăng ký | loai_dang_ky | Loại đăng ký | select | Loại A\|Loại B | 1 | |
+| mau_form | Đăng ký | khoi_loai_a | Thông tin loại A | **block** | | 2 | `loai_dang_ky=Loại A` |
+| mau_form | Đăng ký | khoi_loai_a.hinh_thuc | Hình thức | select | Một lần\|Nhiều lần | 3 | |
+| mau_form | Đăng ký | khoi_loai_a.so_lan | Số lần | number | | 4 | `hinh_thuc=Nhiều lần` |
+
+Ghi chú:
+- Field con có thể trỏ về khối cha bằng cách đặt **cột H = mã block**, ví dụ `khoi_loai_a`.
+- Nếu field con cũng cần lựa chọn ở cột H, hãy đặt **cột C theo dạng `mã_block.mã_field_con`**, ví dụ `khoi_loai_a.hinh_thuc`.
+- Điều kiện trong nội bộ block dùng mã field con, ví dụ `hinh_thuc=Nhiều lần`.
+
+### 5e. Điều kiện hiện bên trong group
+
+Trong `group`, field con cũng dùng được cột **L** theo dữ liệu của từng dòng group.
+
+VD: Trong mỗi dòng "Danh sách nghiệp", chọn loại nghiệp là `TTTS` thì mới hiện ô mô tả TTTS:
+
+| A | B | C | D | E | H | I | L |
+|---|---|---|---|---|---|---|---|
+| shct | Nghiệp | nghiep_list | Danh sách nghiệp | **group** | | 1 | |
+| shct | Nghiệp | nghiep_list.loai_nghiep | Loại nghiệp | select | TTTS\|Khác | 2 | |
+| shct | Nghiệp | nghiep_list.mo_ta_ttts | Mô tả TTTS | textarea | | 3 | `loai_nghiep=TTTS` |
 
 ---
 

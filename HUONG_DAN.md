@@ -95,11 +95,12 @@ cd %USERPROFILE%\Desktop\FormDangky
 git remote add upstream https://github.com/Hoanq1003/FormDangky.git
 git fetch upstream
 git checkout main
-git merge upstream/main
+git merge upstream/main --allow-unrelated-histories
 git push origin main
 ```
 
 > Nếu dòng `git remote add upstream ...` báo đã tồn tại, bỏ qua dòng đó rồi chạy tiếp từ `git fetch upstream`.
+> Nếu repo được tạo bằng Vercel/import/copy code, tuỳ chọn `--allow-unrelated-histories` giúp Git cập nhật được dù GitHub không xem repo đó là fork thật.
 > Nếu có conflict, cần sửa file bị conflict trước, sau đó chạy `git add .`, `git commit`, rồi `git push origin main`.
 
 ---

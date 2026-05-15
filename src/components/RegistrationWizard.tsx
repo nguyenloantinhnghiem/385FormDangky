@@ -51,6 +51,13 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
     // Get label, never show raw key
     const getLabel = (key: string) => fieldLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
+    const hasDisplayValue = (val: unknown): boolean => {
+        if (val === undefined || val === null || val === '' || val === false) return false;
+        if (Array.isArray(val)) return val.some(hasDisplayValue);
+        if (typeof val === 'object') return Object.values(val).some(hasDisplayValue);
+        return true;
+    };
+
     return (
         <div className="animate-slide-in">
             {/* Header */}
@@ -110,8 +117,7 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
                 </CardHeader>
                 <CardContent className="px-3 sm:px-4 pb-3 pt-2 space-y-3">
                     {Object.entries(formData).map(([key, value]) => {
-                        if (value === undefined || value === null || value === '' || value === false) return null;
-                        if (Array.isArray(value) && value.length === 0) return null;
+                        if (!hasDisplayValue(value)) return null;
                         const label = getLabel(key);
 
                         // Group data: array of objects → render as numbered cards
@@ -148,6 +154,35 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            );
+                        }
+
+                        // Block data: single object with nested fields
+                        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                            const item = value as Record<string, unknown>;
+                            const visibleEntries = Object.entries(item).filter(([, subVal]) => hasDisplayValue(subVal));
+                            if (visibleEntries.length === 0) return null;
+
+                            return (
+                                <div key={key} className="space-y-2">
+                                    <p className="text-xs font-semibold text-stone-600 uppercase tracking-wide flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+                                        {label}
+                                    </p>
+                                    <div className="bg-stone-50 rounded-lg p-3 border border-stone-100 space-y-1">
+                                        {visibleEntries.map(([subKey, subVal]) => {
+                                            const subLabel = fieldLabels[`${key}.${subKey}`] || getLabel(subKey);
+                                            return (
+                                                <div key={subKey} className="text-sm">
+                                                    <span className="text-stone-500 text-xs">{subLabel}</span>
+                                                    <p className="text-stone-800 font-medium leading-snug break-words whitespace-pre-line">
+                                                        {fmt(subVal)}
+                                                    </p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             );
                         }

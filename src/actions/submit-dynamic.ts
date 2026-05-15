@@ -18,6 +18,17 @@ interface DynamicSubmitPayload {
     formData: Record<string, unknown>;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasMeaningfulValue(value: unknown): boolean {
+    if (value === undefined || value === null || value === '' || value === false) return false;
+    if (Array.isArray(value)) return value.some(hasMeaningfulValue);
+    if (isRecord(value)) return Object.values(value).some(hasMeaningfulValue);
+    return true;
+}
+
 export async function submitDynamicRegistration(payload: DynamicSubmitPayload): Promise<{ success: boolean; code?: string; error?: string }> {
     try {
         const { registrationType, registrationLabel, applicant, formData } = payload;
@@ -38,6 +49,16 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
             }
         }
         const getLabel = (k: string) => labelMap[k] || k;
+        const formatValue = (value: unknown): string => {
+            if (value === true) return 'Có';
+            if (value === false) return 'Không';
+            if (Array.isArray(value)) return value.map(String).join(', ');
+            return String(value || '');
+        };
+        const formatNestedParts = (parentKey: string, item: Record<string, unknown>): string[] =>
+            Object.entries(item)
+                .filter(([, v]) => hasMeaningfulValue(v))
+                .map(([k, v]) => `${getLabel(`${parentKey}.${k}`)}: ${formatValue(v)}`);
 
         // Build formatted text from form data
         const lines: string[] = [];
@@ -49,20 +70,23 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
 
         // Add form fields as key-value pairs (using labels)
         for (const [key, value] of Object.entries(formData)) {
-            if (value === undefined || value === null || value === '' || value === false) continue;
+            if (!hasMeaningfulValue(value)) continue;
             // Group data: array of objects
-            if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
-                const items = value as Record<string, unknown>[];
+            if (Array.isArray(value) && value.length > 0 && isRecord(value[0])) {
+                const items = value.filter(isRecord);
                 lines.push(`• ${getLabel(key)}:`);
                 items.forEach((item, idx) => {
-                    const parts = Object.entries(item)
-                        .filter(([, v]) => v !== undefined && v !== null && v !== '')
-                        .map(([k, v]) => `${getLabel(`${key}.${k}`)}: ${Array.isArray(v) ? (v as string[]).join(', ') : String(v)}`);
+                    const parts = formatNestedParts(key, item);
                     lines.push(`  ${idx + 1}. ${parts.join(' | ')}`);
                 });
             } else if (Array.isArray(value)) {
                 if (value.length === 0) continue;
                 lines.push(`• ${getLabel(key)}: ${value.join(', ')}`);
+            } else if (isRecord(value)) {
+                const parts = formatNestedParts(key, value);
+                if (parts.length === 0) continue;
+                lines.push(`• ${getLabel(key)}:`);
+                lines.push(`  ${parts.join(' | ')}`);
             } else if (value === true) {
                 lines.push(`• ${getLabel(key)}: Có`);
             } else {
@@ -99,10 +123,13 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
             updated_at: now,
             display_name: registrationLabel,
             summary_text: Object.entries(formData)
-                .filter(([, v]) => v !== undefined && v !== null && v !== '' && v !== false && !(Array.isArray(v) && v.length === 0))
+                .filter(([, v]) => hasMeaningfulValue(v))
                 .map(([k, v]) => {
-                    if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'object') {
-                        return `${getLabel(k)}: ${(v as Record<string, unknown>[]).length} mục`;
+                    if (Array.isArray(v) && v.length > 0 && isRecord(v[0])) {
+                        return `${getLabel(k)}: ${v.filter(isRecord).length} mục`;
+                    }
+                    if (isRecord(v)) {
+                        return `${getLabel(k)}: ${formatNestedParts(k, v).join(' | ')}`;
                     }
                     return `${getLabel(k)}: ${v === true ? 'Có' : Array.isArray(v) ? v.join(', ') : String(v).slice(0, 50)}`;
                 })
@@ -176,4 +203,3 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
         return { success: false, error: 'Đã có lỗi khi gửi đăng ký. Vui lòng thử lại sau.' };
     }
 }
-

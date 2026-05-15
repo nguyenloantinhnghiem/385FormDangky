@@ -277,7 +277,12 @@ export async function appendToFormSheet(
             // Single object → format key:value pairs
             return Object.entries(v)
                 .filter(([, sv]) => sv !== undefined && sv !== null && sv !== '')
-                .map(([sk, sv]) => `${sk}: ${String(sv)}`)
+                .map(([sk, sv]) => {
+                    const subLabel = fieldKey
+                        ? (fieldConfigs[`${fieldKey}.${sk}`]?.label || fieldConfigs[sk]?.label || sk)
+                        : (fieldConfigs[sk]?.label || sk);
+                    return `${subLabel}: ${Array.isArray(sv) ? (sv as string[]).join(', ') : String(sv)}`;
+                })
                 .join(', ');
         }
         return String(v || '');
@@ -331,6 +336,10 @@ export async function appendToFormSheet(
                     return `${label}:\n${itemLines.join('\n')}`;
                 }
 
+                if (typeof v === 'object' && v !== null) {
+                    return `${label}: ${fmt(v, k)}`;
+                }
+
                 return `${label}: ${fmt(v)}`;
             })
             .join('\n');
@@ -350,4 +359,3 @@ export async function appendToFormSheet(
         requestBody: { values: [row] },
     });
 }
-

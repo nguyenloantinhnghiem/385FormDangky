@@ -52,7 +52,7 @@ jobs:
 
           if git merge --ff-only FETCH_HEAD; then
             echo "Đã cập nhật bằng fast-forward."
-          elif git merge --no-edit FETCH_HEAD; then
+          elif git merge --no-edit --allow-unrelated-histories FETCH_HEAD; then
             echo "Đã cập nhật bằng merge commit."
           else
             git merge --abort || true

@@ -8,7 +8,7 @@ Hệ thống đăng ký trực tuyến, tuỳ biến hoàn toàn qua **Google Sh
 
 - **Nhiều loại form đăng ký** — mỗi form là 1 link riêng (`/dang-ky/{mã}`)
 - **Phân nhóm cha-con** — VD: "An vị lô hương" → click vào chọn trường hợp
-- **7 loại trường nhập liệu:** text, textarea, select, checkbox, multichoice, number, group (lặp lại)
+- **Nhiều loại trường nhập liệu:** text, textarea, select, checkbox, multichoice, number, group, block, image, signature
 - **Kết quả tách sheet riêng** — mỗi form → 1 tab `KQ_{tên form}`
 - **Tuỳ chọn cột riêng/gom chung** — admin chọn trường nào ra cột riêng
 - **Mobile-first**, responsive
@@ -76,11 +76,12 @@ cd FormDangky
 git remote add upstream https://github.com/Hoanq1003/FormDangky.git
 git fetch upstream
 git checkout main
-git merge upstream/main
+git merge upstream/main --allow-unrelated-histories
 git push origin main
 ```
 
 > Nếu đã thêm `upstream` trước đó và bị báo `remote upstream already exists`, bỏ qua dòng `git remote add upstream ...`.
+> Nếu repo được tạo bằng Vercel/import/copy code, tuỳ chọn `--allow-unrelated-histories` giúp Git cập nhật được dù GitHub không xem repo đó là fork thật.
 
 **Nếu đã cài GitHub CLI (`gh`):**
 ```bash
@@ -186,7 +187,7 @@ npx tsx scripts/setup-new-sheet.ts
 | **E** | Loại trường | `text` |
 | **F** | Bắt buộc | `TRUE` |
 | **G** | Gợi ý nhập | `VD: Nguyễn Văn A` |
-| **H** | Các lựa chọn (ngăn bởi \|) | `A\|B\|C` |
+| **H** | Các lựa chọn (ngăn bởi \|) hoặc mã `group`/`block` cha | `A\|B\|C` |
 | **I** | Thứ tự | `1` |
 | **J** | Ghi chú | `Theo âm lịch` |
 | **K** | Cột riêng trong KQ | `TRUE` |
@@ -204,6 +205,25 @@ npx tsx scripts/setup-new-sheet.ts
 | `multichoice` | Checkbox chọn nhiều (cần cột H) |
 | `checkbox` | 1 ô check Có/Không |
 | `group` | Nhóm lặp lại (thêm/bớt được) |
+| `block` | Khối trường con cố định, không có nút thêm/bớt |
+| `khoi` / `khối` | Tên khác của `block` |
+| `image` | Tải ảnh |
+| `signature` | Chữ ký |
+
+### Khối điều kiện và điều kiện trong nhóm
+
+**`block`** dùng khi muốn chọn một mục rồi hiện cả một khối trường con, nhưng không cho người dùng bấm thêm nhiều dòng như `group`.
+
+Ví dụ: chọn "Loại A" thì hiện khối "Thông tin loại A":
+
+| A | B | C | D | E | H | I | L |
+|---|---|---|---|---|---|---|---|
+| `mau_form` | `Đăng ký` | `loai_dang_ky` | `Loại đăng ký` | `select` | `Loại A\|Loại B` | `1` | |
+| `mau_form` | `Đăng ký` | `khoi_loai_a` | `Thông tin loại A` | `block` | | `2` | `loai_dang_ky=Loại A` |
+| `mau_form` | `Đăng ký` | `khoi_loai_a.hinh_thuc` | `Hình thức` | `select` | `Một lần\|Nhiều lần` | `3` | |
+| `mau_form` | `Đăng ký` | `khoi_loai_a.so_lan` | `Số lần` | `number` | | `4` | `hinh_thuc=Nhiều lần` |
+
+Trong `block` hoặc `group`, cột **L** có thể tham chiếu field nội bộ bằng `mã_field_con=giá_trị` như `hinh_thuc=Nhiều lần`. Nếu field con cũng cần lựa chọn ở cột H, đặt mã field theo dạng `mã_block.mã_field_con` hoặc `mã_group.mã_field_con`.
 
 ---
 

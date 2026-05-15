@@ -49,6 +49,21 @@ function hasMeaningfulValue(value: unknown): boolean {
     return true;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function conditionMatches(depValue: unknown, expected: string): boolean {
+    if (Array.isArray(depValue)) return depValue.map(String).includes(expected);
+    if (typeof depValue === 'boolean') {
+        const normalizedExpected = normalizeKey(expected);
+        return depValue
+            ? ['true', 'co', 'yes', '1'].includes(normalizedExpected)
+            : ['false', 'khong', 'no', '0'].includes(normalizedExpected);
+    }
+    return String(depValue || '') === expected;
+}
+
 function getHistoricalDetail(values: Record<string, unknown>): string {
     for (const key of ['chi_tiet', 'chiTiet', 'detail', 'noi_dung_cu']) {
         const value = values[key];
@@ -101,7 +116,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                 for (const f of sec.fields) {
                     if (f.groupKey) continue; // sub-fields init handled by group
 
-                    if (f.fieldType === 'group') {
+                    if (f.fieldType === 'group' || f.fieldType === 'block') {
                         if (!hasMappedData && historicalDetail && !filledHistoricalDetail && !hasMeaningfulValue(defaults[f.fieldKey])) {
                             const subFields = s
                                 .flatMap((section) => section.fields)
@@ -111,12 +126,16 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                 || subFields[0];
 
                             if (detailField?.subFieldKey) {
-                                defaults[f.fieldKey] = [{ [detailField.subFieldKey]: historicalDetail }];
+                                defaults[f.fieldKey] = f.fieldType === 'group'
+                                    ? [{ [detailField.subFieldKey]: historicalDetail }]
+                                    : { [detailField.subFieldKey]: historicalDetail };
                                 filledHistoricalDetail = true;
                             }
                         }
 
-                        if (defaults[f.fieldKey] === undefined) defaults[f.fieldKey] = [{}];
+                        if (defaults[f.fieldKey] === undefined) {
+                            defaults[f.fieldKey] = f.fieldType === 'group' ? [{}] : {};
+                        }
                         continue;
                     }
 
@@ -151,31 +170,41 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
     const isFieldVisible = (field: FormFieldDef): boolean => {
         if (!field.showWhen) return true;
         const depValue = formData[field.showWhen.fieldKey];
-        if (Array.isArray(depValue)) return depValue.includes(field.showWhen.value);
-        return String(depValue || '') === field.showWhen.value;
+        return conditionMatches(depValue, field.showWhen.value);
     };
 
-    // ========== GROUP HELPERS ==========
-    const getGroupSubFields = (groupKey: string): FormFieldDef[] => {
+    // ========== CONTAINER HELPERS (GROUP/BLOCK) ==========
+    const getContainerSubFields = (containerKey: string): FormFieldDef[] => {
         const subFields: FormFieldDef[] = [];
         for (const sec of sections) {
             for (const f of sec.fields) {
-                if (f.groupKey === groupKey) subFields.push(f);
+                if (f.groupKey === containerKey) subFields.push(f);
             }
         }
         return subFields;
     };
 
+    const getGroupSubFields = getContainerSubFields;
+
     const getGroupItems = (groupKey: string): Record<string, unknown>[] => {
         const items = formData[groupKey];
-        if (Array.isArray(items)) return items as Record<string, unknown>[];
+        if (Array.isArray(items)) return items.filter(isRecord);
         return [{}];
+    };
+
+    const getBlockData = (blockKey: string): Record<string, unknown> => {
+        const value = formData[blockKey];
+        return isRecord(value) ? value : {};
     };
 
     const handleGroupItemChange = (groupKey: string, index: number, subKey: string, value: unknown) => {
         const items = [...getGroupItems(groupKey)];
         items[index] = { ...items[index], [subKey]: value };
         handleChange(groupKey, items);
+    };
+
+    const handleBlockFieldChange = (blockKey: string, subKey: string, value: unknown) => {
+        handleChange(blockKey, { ...getBlockData(blockKey), [subKey]: value });
     };
 
     const addGroupItem = (groupKey: string) => {
@@ -187,6 +216,41 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         const items = getGroupItems(groupKey).filter((_, i) => i !== index);
         if (items.length === 0) items.push({});
         handleChange(groupKey, items);
+    };
+
+    const isContainerFieldVisible = (
+        field: FormFieldDef,
+        containerKey: string,
+        itemData: Record<string, unknown>,
+    ): boolean => {
+        if (!field.showWhen) return true;
+
+        const depKey = field.showWhen.fieldKey;
+        const nestedPrefix = `${containerKey}.`;
+        let depValue: unknown;
+
+        if (depKey.startsWith(nestedPrefix)) {
+            depValue = itemData[depKey.slice(nestedPrefix.length)];
+        } else if (Object.prototype.hasOwnProperty.call(itemData, depKey)) {
+            depValue = itemData[depKey];
+        } else {
+            depValue = formData[depKey];
+        }
+
+        return conditionMatches(depValue, field.showWhen.value);
+    };
+
+    const getVisibleContainerData = (
+        containerKey: string,
+        itemData: Record<string, unknown>,
+    ): Record<string, unknown> => {
+        const visibleData: Record<string, unknown> = {};
+        for (const sf of getContainerSubFields(containerKey)) {
+            if (!sf.subFieldKey || !isContainerFieldVisible(sf, containerKey, itemData)) continue;
+            const value = itemData[sf.subFieldKey];
+            if (hasMeaningfulValue(value)) visibleData[sf.subFieldKey] = value;
+        }
+        return visibleData;
     };
 
     // ========== VALIDATION ==========
@@ -203,12 +267,34 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                     const items = getGroupItems(f.fieldKey);
                     for (let i = 0; i < items.length; i++) {
                         for (const sf of subFields) {
+                            if (!isContainerFieldVisible(sf, f.fieldKey, items[i])) continue;
                             if (sf.required) {
                                 const val = items[i][sf.subFieldKey!];
-                                if (val === undefined || val === null || val === '') {
+                                if (
+                                    val === undefined
+                                    || val === null
+                                    || val === ''
+                                    || (sf.fieldType === 'multichoice' && Array.isArray(val) && val.length === 0)
+                                ) {
                                     newErrors[`${f.fieldKey}.${i}.${sf.subFieldKey}`] =
                                         `Vui lòng nhập ${sf.fieldLabel} (mục ${i + 1})`;
                                 }
+                            }
+                        }
+                    }
+                } else if (f.fieldType === 'block') {
+                    const blockData = getBlockData(f.fieldKey);
+                    for (const sf of getContainerSubFields(f.fieldKey)) {
+                        if (!sf.subFieldKey || !isContainerFieldVisible(sf, f.fieldKey, blockData)) continue;
+                        if (sf.required) {
+                            const val = blockData[sf.subFieldKey];
+                            if (
+                                val === undefined
+                                || val === null
+                                || val === ''
+                                || (sf.fieldType === 'multichoice' && Array.isArray(val) && val.length === 0)
+                            ) {
+                                newErrors[`${f.fieldKey}.${sf.subFieldKey}`] = `Vui lòng nhập/chọn ${sf.fieldLabel}`;
                             }
                         }
                     }
@@ -244,7 +330,17 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                             for (const sf of subFields) {
                                 labels[`${f.fieldKey}.${sf.subFieldKey}`] = sf.fieldLabel;
                             }
-                            visibleData[f.fieldKey] = formData[f.fieldKey];
+                            visibleData[f.fieldKey] = getGroupItems(f.fieldKey)
+                                .map((item) => getVisibleContainerData(f.fieldKey, item))
+                                .filter(hasMeaningfulValue);
+                        } else if (f.fieldType === 'block') {
+                            for (const sf of getContainerSubFields(f.fieldKey)) {
+                                labels[`${f.fieldKey}.${sf.subFieldKey}`] = sf.fieldLabel;
+                            }
+                            const blockData = getVisibleContainerData(f.fieldKey, getBlockData(f.fieldKey));
+                            if (hasMeaningfulValue(blockData) || f.required) {
+                                visibleData[f.fieldKey] = blockData;
+                            }
                         } else {
                             visibleData[f.fieldKey] = formData[f.fieldKey];
                         }
@@ -255,7 +351,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         }
     };
 
-    // ========== RENDER SUB-FIELD (for group items) ==========
+    // ========== RENDER SUB-FIELD (for group/block items) ==========
     const renderSubFieldInput = (field: FormFieldDef, value: unknown, onChange: (val: unknown) => void) => {
         switch (field.fieldType) {
             case 'text':
@@ -378,6 +474,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         </div>
                         <div className="space-y-3">
                             {subFields.map((sf) => {
+                                if (!isContainerFieldVisible(sf, field.fieldKey, item)) return null;
                                 const errKey = `${field.fieldKey}.${index}.${sf.subFieldKey}`;
                                 return (
                                     <div key={sf.subFieldKey} className="space-y-1">
@@ -415,6 +512,46 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         );
     };
 
+    // ========== RENDER BLOCK ==========
+    const renderBlock = (field: FormFieldDef) => {
+        const subFields = getContainerSubFields(field.fieldKey);
+        const blockData = getBlockData(field.fieldKey);
+        const visibleSubFields = subFields.filter((sf) =>
+            isContainerFieldVisible(sf, field.fieldKey, blockData)
+        );
+
+        if (visibleSubFields.length === 0) {
+            return null;
+        }
+
+        return (
+            <div className="space-y-3 border border-amber-200 rounded-lg p-4 bg-amber-50/30">
+                {visibleSubFields.map((sf) => {
+                    const errKey = `${field.fieldKey}.${sf.subFieldKey}`;
+                    return (
+                        <div key={sf.subFieldKey} className="space-y-1">
+                            <Label className="text-sm">
+                                {sf.fieldLabel}
+                                {sf.required && <span className="text-red-500 ml-1">*</span>}
+                            </Label>
+                            {renderSubFieldInput(
+                                sf,
+                                blockData[sf.subFieldKey!],
+                                (val) => handleBlockFieldChange(field.fieldKey, sf.subFieldKey!, val)
+                            )}
+                            {sf.helperText && (
+                                <p className="text-xs text-stone-400">{sf.helperText}</p>
+                            )}
+                            {errors[errKey] && (
+                                <p className="text-xs text-red-500">{errors[errKey]}</p>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     // ========== RENDER FIELD ==========
     const renderField = (field: FormFieldDef) => {
         const value = formData[field.fieldKey];
@@ -422,6 +559,8 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         switch (field.fieldType) {
             case 'group':
                 return renderGroup(field);
+            case 'block':
+                return renderBlock(field);
             case 'text':
             case 'number':
                 return (
@@ -643,7 +782,14 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                 {sections.map((section) => {
                     // Filter: show top-level fields that are visible, skip sub-fields (rendered by group)
                     const visibleFields = section.fields
-                        .filter((f) => !f.groupKey && isFieldVisible(f));
+                        .filter((f) => !f.groupKey && isFieldVisible(f))
+                        .filter((f) => {
+                            if (f.fieldType !== 'block') return true;
+                            const blockData = getBlockData(f.fieldKey);
+                            return getContainerSubFields(f.fieldKey).some((sf) =>
+                                isContainerFieldVisible(sf, f.fieldKey, blockData)
+                            );
+                        });
                     if (visibleFields.length === 0) return null;
                     return (
                         <Card key={section.name}>
@@ -653,13 +799,13 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                             <CardContent className="space-y-4">
                                 {visibleFields.map((field) => (
                                     <div key={field.fieldKey} className="space-y-1.5">
-                                        {field.fieldType !== 'checkbox' && field.fieldType !== 'group' && (
+                                        {field.fieldType !== 'checkbox' && field.fieldType !== 'group' && field.fieldType !== 'block' && (
                                             <Label htmlFor={field.fieldKey}>
                                                 {field.fieldLabel}
                                                 {field.required && <span className="text-red-500 ml-1">*</span>}
                                             </Label>
                                         )}
-                                        {field.fieldType === 'group' && (
+                                        {(field.fieldType === 'group' || field.fieldType === 'block') && (
                                             <Label className="text-base font-semibold text-stone-700">
                                                 {field.fieldLabel}
                                             </Label>
