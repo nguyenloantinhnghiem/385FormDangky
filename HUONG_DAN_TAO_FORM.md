@@ -39,7 +39,7 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | **E** | Loại trường | Xem bảng bên dưới | `text` |
 | **F** | Bắt buộc | TRUE / FALSE | `TRUE` |
 | **G** | Gợi ý | Placeholder | `VD: Nguyễn Văn A` |
-| **H** | Lựa chọn / nhóm cha | Ngăn bởi dấu `\|`, hoặc mã `group`/`block` cha | `Nam\|Nữ` |
+| **H** | Lựa chọn / nhóm cha / màu | Ngăn bởi `\|`, mã cha, hoặc màu cho `block`/`group`/`notice`/`heading` | `Nam\|Nữ` |
 | **I** | Thứ tự | Số | `1` |
 | **J** | Ghi chú | Text nhỏ dưới input | `Ghi theo CCCD` |
 | **K** | Cột riêng | TRUE = cột riêng trong kết quả | `TRUE` |
@@ -61,6 +61,8 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | `group` | Nhóm lặp lại (thêm/bớt) | Không |
 | `block` | Khối trường con cố định, không thêm/bớt | Không |
 | `khoi` / `khối` | Tên khác của `block` | Không |
+| `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu | Màu |
+| `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu | Màu |
 | `image` | Tải ảnh | Không |
 | `signature` | Chữ ký | Không |
 
@@ -93,7 +95,33 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 
 ## 5. TÍNH NĂNG NÂNG CAO
 
-### 5a. Form có nhóm con (cha-con)
+### 5a. Màu sắc, tiêu đề phụ và hộp nhấn mạnh
+
+Hệ thống tự tô màu cho từng nhóm form. Nếu muốn tự chọn màu, điền cột **H** với các giá trị:
+
+| Màu muốn dùng | Ghi ở cột H |
+|---|---|
+| Vàng/cảnh báo | `amber`, `vang`, `warning` |
+| Xanh dương/thông tin | `blue`, `xanh_duong`, `info` |
+| Xanh lá/thành công | `emerald`, `green`, `xanh_la`, `success` |
+| Tím | `purple`, `tim` |
+| Đỏ/quan trọng | `rose`, `red`, `do`, `danger` |
+| Xanh ngọc | `teal`, `ngoc` |
+| Xám/trung tính | `stone`, `gray`, `xam` |
+
+**Hộp thông tin/nhấn mạnh (`notice`)**
+
+| A | B | C | D | E | G | H | I | J |
+|---|---|---|---|---|---|---|---|---|
+| mau_form | Hướng dẫn | luu_y_truoc_khi_dang_ky | Lưu ý trước khi đăng ký | **notice** | Vui lòng chuẩn bị đầy đủ thông tin trước khi gửi. | blue | 1 | Thông tin đã gửi sẽ được lưu vào Google Sheet. |
+
+**Tiêu đề phụ (`heading`)**
+
+| A | B | C | D | E | G | H | I |
+|---|---|---|---|---|---|---|---|
+| mau_form | Nội dung | tieu_de_phap_hoi | Thông tin tham dự pháp hội | **heading** | Các mục bên dưới dùng để ban tổ chức sắp xếp chỗ ngồi. | emerald | 2 |
+
+### 5b. Form có nhóm con (cha-con)
 
 VD: "Đăng ký AVLH" → bấm vào → chọn "Trường hợp 1" hoặc "Trường hợp 2"
 
@@ -108,7 +136,7 @@ VD: "Đăng ký AVLH" → bấm vào → chọn "Trường hợp 1" hoặc "Trư
 > Dòng cha: **cột G trống**, cột H trống
 > Dòng con: cột G = mã form, **cột H = mã cha**
 
-### 5b. Nhóm lặp lại (group)
+### 5c. Nhóm lặp lại (group)
 
 VD: Nhập nhiều nghiệp, mỗi nghiệp có tên + mô tả:
 
@@ -120,7 +148,7 @@ VD: Nhập nhiều nghiệp, mỗi nghiệp có tên + mô tả:
 
 > Trường con (nghiep, hien_tuong) để **cột H = mã nhóm cha** (`nghiep_list`)
 
-### 5c. Hiện trường theo điều kiện
+### 5d. Hiện trường theo điều kiện
 
 VD: Chỉ hiện trường "Mô tả" khi chọn nghiệp "TTTS":
 
@@ -130,7 +158,7 @@ VD: Chỉ hiện trường "Mô tả" khi chọn nghiệp "TTTS":
 
 > Cột L (Điều kiện hiện): `mã_trường=giá_trị`
 
-### 5d. Khối điều kiện (block)
+### 5e. Khối điều kiện (block)
 
 `block` giống `group` ở chỗ có các trường con, nhưng chỉ có **1 khối cố định** và **không có nút thêm/bớt**. Dùng khi chọn mục A thì hiện cả cụm trường riêng của mục A.
 
@@ -139,7 +167,7 @@ VD: Chọn "Loại A" thì hiện khối gồm "Hình thức" và "Số lần":
 | A | B | C | D | E | H | I | L |
 |---|---|---|---|---|---|---|---|
 | mau_form | Đăng ký | loai_dang_ky | Loại đăng ký | select | Loại A\|Loại B | 1 | |
-| mau_form | Đăng ký | khoi_loai_a | Thông tin loại A | **block** | | 2 | `loai_dang_ky=Loại A` |
+| mau_form | Đăng ký | khoi_loai_a | Thông tin loại A | **block** | amber | 2 | `loai_dang_ky=Loại A` |
 | mau_form | Đăng ký | khoi_loai_a.hinh_thuc | Hình thức | select | Một lần\|Nhiều lần | 3 | |
 | mau_form | Đăng ký | khoi_loai_a.so_lan | Số lần | number | | 4 | `hinh_thuc=Nhiều lần` |
 
@@ -148,7 +176,7 @@ Ghi chú:
 - Nếu field con cũng cần lựa chọn ở cột H, hãy đặt **cột C theo dạng `mã_block.mã_field_con`**, ví dụ `khoi_loai_a.hinh_thuc`.
 - Điều kiện trong nội bộ block dùng mã field con, ví dụ `hinh_thuc=Nhiều lần`.
 
-### 5e. Điều kiện hiện bên trong group
+### 5f. Điều kiện hiện bên trong group
 
 Trong `group`, field con cũng dùng được cột **L** theo dữ liệu của từng dòng group.
 

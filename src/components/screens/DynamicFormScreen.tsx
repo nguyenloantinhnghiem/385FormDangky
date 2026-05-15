@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2, RotateCcw, User } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2, RotateCcw, User, Info, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 import FileUpload from '@/components/ui/FileUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
 import type { Applicant } from '@/types';
@@ -96,6 +96,140 @@ function getApplicantDefault(field: FormFieldDef, applicant?: Applicant | null):
     return undefined;
 }
 
+const TONE_STYLES = {
+    amber: {
+        card: 'border-amber-200',
+        header: 'bg-gradient-to-r from-amber-50 to-white',
+        accent: 'bg-amber-500',
+        title: 'text-amber-900',
+        label: 'text-amber-700',
+        icon: 'bg-amber-100 text-amber-700',
+        panel: 'border-amber-200 bg-amber-50/60',
+        panelStrong: 'border-amber-300 bg-amber-50/80',
+        notice: 'border-amber-300 bg-amber-50 text-amber-900',
+        item: 'border-l-amber-400 bg-amber-50/40',
+    },
+    blue: {
+        card: 'border-blue-200',
+        header: 'bg-gradient-to-r from-blue-50 to-white',
+        accent: 'bg-blue-500',
+        title: 'text-blue-900',
+        label: 'text-blue-700',
+        icon: 'bg-blue-100 text-blue-700',
+        panel: 'border-blue-200 bg-blue-50/60',
+        panelStrong: 'border-blue-300 bg-blue-50/80',
+        notice: 'border-blue-300 bg-blue-50 text-blue-900',
+        item: 'border-l-blue-400 bg-blue-50/40',
+    },
+    emerald: {
+        card: 'border-emerald-200',
+        header: 'bg-gradient-to-r from-emerald-50 to-white',
+        accent: 'bg-emerald-500',
+        title: 'text-emerald-900',
+        label: 'text-emerald-700',
+        icon: 'bg-emerald-100 text-emerald-700',
+        panel: 'border-emerald-200 bg-emerald-50/60',
+        panelStrong: 'border-emerald-300 bg-emerald-50/80',
+        notice: 'border-emerald-300 bg-emerald-50 text-emerald-900',
+        item: 'border-l-emerald-400 bg-emerald-50/40',
+    },
+    purple: {
+        card: 'border-purple-200',
+        header: 'bg-gradient-to-r from-purple-50 to-white',
+        accent: 'bg-purple-500',
+        title: 'text-purple-900',
+        label: 'text-purple-700',
+        icon: 'bg-purple-100 text-purple-700',
+        panel: 'border-purple-200 bg-purple-50/60',
+        panelStrong: 'border-purple-300 bg-purple-50/80',
+        notice: 'border-purple-300 bg-purple-50 text-purple-900',
+        item: 'border-l-purple-400 bg-purple-50/40',
+    },
+    rose: {
+        card: 'border-rose-200',
+        header: 'bg-gradient-to-r from-rose-50 to-white',
+        accent: 'bg-rose-500',
+        title: 'text-rose-900',
+        label: 'text-rose-700',
+        icon: 'bg-rose-100 text-rose-700',
+        panel: 'border-rose-200 bg-rose-50/60',
+        panelStrong: 'border-rose-300 bg-rose-50/80',
+        notice: 'border-rose-300 bg-rose-50 text-rose-900',
+        item: 'border-l-rose-400 bg-rose-50/40',
+    },
+    teal: {
+        card: 'border-teal-200',
+        header: 'bg-gradient-to-r from-teal-50 to-white',
+        accent: 'bg-teal-500',
+        title: 'text-teal-900',
+        label: 'text-teal-700',
+        icon: 'bg-teal-100 text-teal-700',
+        panel: 'border-teal-200 bg-teal-50/60',
+        panelStrong: 'border-teal-300 bg-teal-50/80',
+        notice: 'border-teal-300 bg-teal-50 text-teal-900',
+        item: 'border-l-teal-400 bg-teal-50/40',
+    },
+    stone: {
+        card: 'border-stone-200',
+        header: 'bg-gradient-to-r from-stone-50 to-white',
+        accent: 'bg-stone-500',
+        title: 'text-stone-900',
+        label: 'text-stone-700',
+        icon: 'bg-stone-100 text-stone-700',
+        panel: 'border-stone-200 bg-stone-50/70',
+        panelStrong: 'border-stone-300 bg-stone-50',
+        notice: 'border-stone-300 bg-stone-50 text-stone-900',
+        item: 'border-l-stone-400 bg-stone-50/70',
+    },
+} as const;
+
+type ToneName = keyof typeof TONE_STYLES;
+
+const TONE_ORDER: ToneName[] = ['amber', 'blue', 'emerald', 'purple', 'rose', 'teal'];
+
+const TONE_ALIASES: Record<string, ToneName> = {
+    vang: 'amber',
+    amber: 'amber',
+    warning: 'amber',
+    canh_bao: 'amber',
+    blue: 'blue',
+    xanh_duong: 'blue',
+    info: 'blue',
+    emerald: 'emerald',
+    green: 'emerald',
+    xanh_la: 'emerald',
+    success: 'emerald',
+    purple: 'purple',
+    tim: 'purple',
+    rose: 'rose',
+    red: 'rose',
+    do: 'rose',
+    danger: 'rose',
+    teal: 'teal',
+    cyan: 'teal',
+    ngoc: 'teal',
+    stone: 'stone',
+    gray: 'stone',
+    xam: 'stone',
+};
+
+function getToneName(rawTone: string | undefined, seed: string): ToneName {
+    const normalizedTone = normalizeKey(rawTone || '');
+    if (normalizedTone && TONE_ALIASES[normalizedTone]) return TONE_ALIASES[normalizedTone];
+
+    let hash = 0;
+    for (const char of seed) hash = (hash + char.charCodeAt(0)) % 997;
+    return TONE_ORDER[hash % TONE_ORDER.length];
+}
+
+function getTone(rawTone: string | undefined, seed: string) {
+    return TONE_STYLES[getToneName(rawTone, seed)];
+}
+
+function isPresentationField(field: FormFieldDef): boolean {
+    return field.fieldType === 'notice' || field.fieldType === 'heading';
+}
+
 export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, applicant, isReregistering = false, onEditApplicant, onNext, onBack }: DynamicFormScreenProps) {
     const [sections, setSections] = useState<FormSection[]>([]);
     const [loading, setLoading] = useState(true);
@@ -115,6 +249,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
             for (const sec of s) {
                 for (const f of sec.fields) {
                     if (f.groupKey) continue; // sub-fields init handled by group
+                    if (isPresentationField(f)) continue;
 
                     if (f.fieldType === 'group' || f.fieldType === 'block') {
                         if (!hasMappedData && historicalDetail && !filledHistoricalDetail && !hasMeaningfulValue(defaults[f.fieldKey])) {
@@ -246,6 +381,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
     ): Record<string, unknown> => {
         const visibleData: Record<string, unknown> = {};
         for (const sf of getContainerSubFields(containerKey)) {
+            if (isPresentationField(sf)) continue;
             if (!sf.subFieldKey || !isContainerFieldVisible(sf, containerKey, itemData)) continue;
             const value = itemData[sf.subFieldKey];
             if (hasMeaningfulValue(value)) visibleData[sf.subFieldKey] = value;
@@ -259,6 +395,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         for (const sec of sections) {
             for (const f of sec.fields) {
                 if (f.groupKey) continue; // sub-fields validated within group
+                if (isPresentationField(f)) continue;
                 if (!isFieldVisible(f)) continue;
 
                 if (f.fieldType === 'group') {
@@ -267,6 +404,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                     const items = getGroupItems(f.fieldKey);
                     for (let i = 0; i < items.length; i++) {
                         for (const sf of subFields) {
+                            if (isPresentationField(sf)) continue;
                             if (!isContainerFieldVisible(sf, f.fieldKey, items[i])) continue;
                             if (sf.required) {
                                 const val = items[i][sf.subFieldKey!];
@@ -285,6 +423,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                 } else if (f.fieldType === 'block') {
                     const blockData = getBlockData(f.fieldKey);
                     for (const sf of getContainerSubFields(f.fieldKey)) {
+                        if (isPresentationField(sf)) continue;
                         if (!sf.subFieldKey || !isContainerFieldVisible(sf, f.fieldKey, blockData)) continue;
                         if (sf.required) {
                             const val = blockData[sf.subFieldKey];
@@ -322,12 +461,14 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
             for (const sec of sections) {
                 for (const f of sec.fields) {
                     if (f.groupKey) continue; // handled by group
+                    if (isPresentationField(f)) continue;
                     if (isFieldVisible(f)) {
                         labels[f.fieldKey] = f.fieldLabel;
                         if (f.fieldType === 'group') {
                             // Also include sub-field labels
                             const subFields = getGroupSubFields(f.fieldKey);
                             for (const sf of subFields) {
+                                if (isPresentationField(sf)) continue;
                                 labels[`${f.fieldKey}.${sf.subFieldKey}`] = sf.fieldLabel;
                             }
                             visibleData[f.fieldKey] = getGroupItems(f.fieldKey)
@@ -335,6 +476,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                 .filter(hasMeaningfulValue);
                         } else if (f.fieldType === 'block') {
                             for (const sf of getContainerSubFields(f.fieldKey)) {
+                                if (isPresentationField(sf)) continue;
                                 labels[`${f.fieldKey}.${sf.subFieldKey}`] = sf.fieldLabel;
                             }
                             const blockData = getVisibleContainerData(f.fieldKey, getBlockData(f.fieldKey));
@@ -349,6 +491,51 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
             }
             onNext(visibleData, labels);
         }
+    };
+
+    const renderPresentationField = (field: FormFieldDef) => {
+        const toneName = getToneName(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`);
+        const tone = TONE_STYLES[toneName];
+        const content = [field.placeholder, field.helperText].filter(Boolean).join('\n');
+        const Icon = toneName === 'rose' ? AlertTriangle : toneName === 'emerald' ? CheckCircle2 : field.fieldType === 'heading' ? Sparkles : Info;
+
+        if (field.fieldType === 'heading') {
+            return (
+                <div className={`rounded-lg border ${tone.panelStrong} px-3 py-2.5`}>
+                    <div className="flex items-start gap-2.5">
+                        <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tone.icon}`}>
+                            <Icon className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                            <p className={`text-sm font-semibold ${tone.title}`}>{field.fieldLabel}</p>
+                            {content && (
+                                <p className="mt-0.5 whitespace-pre-line text-xs leading-relaxed text-stone-600">
+                                    {content}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className={`rounded-lg border ${tone.notice} px-3 py-3`}>
+                <div className="flex items-start gap-2.5">
+                    <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tone.icon}`}>
+                        <Icon className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                        <p className="text-sm font-semibold">{field.fieldLabel}</p>
+                        {content && (
+                            <p className="mt-1 whitespace-pre-line text-sm leading-relaxed opacity-85">
+                                {content}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     // ========== RENDER SUB-FIELD (for group/block items) ==========
@@ -451,13 +638,14 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
     const renderGroup = (field: FormFieldDef) => {
         const subFields = getGroupSubFields(field.fieldKey);
         const items = getGroupItems(field.fieldKey);
+        const tone = getTone(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`);
 
         return (
             <div className="space-y-3">
                 {items.map((item, index) => (
-                    <div key={index} className="relative border border-stone-200 rounded-lg p-4 bg-stone-50/50">
+                    <div key={index} className={`relative rounded-lg border border-l-4 p-4 ${tone.item}`}>
                         <div className="flex justify-between items-center mb-3">
-                            <span className="text-sm font-medium text-stone-600">
+                            <span className={`text-sm font-semibold ${tone.label}`}>
                                 {field.fieldLabel} #{index + 1}
                             </span>
                             {items.length > 1 && (
@@ -475,10 +663,13 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         <div className="space-y-3">
                             {subFields.map((sf) => {
                                 if (!isContainerFieldVisible(sf, field.fieldKey, item)) return null;
+                                if (isPresentationField(sf)) {
+                                    return <div key={sf.fieldKey}>{renderPresentationField(sf)}</div>;
+                                }
                                 const errKey = `${field.fieldKey}.${index}.${sf.subFieldKey}`;
                                 return (
                                     <div key={sf.subFieldKey} className="space-y-1">
-                                        <Label className="text-sm">
+                                        <Label className="text-sm font-medium text-stone-700">
                                             {sf.fieldLabel}
                                             {sf.required && <span className="text-red-500 ml-1">*</span>}
                                         </Label>
@@ -504,7 +695,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                     variant="outline"
                     size="sm"
                     onClick={() => addGroupItem(field.fieldKey)}
-                    className="w-full mt-2 gap-1 border-dashed border-amber-300 text-amber-700 hover:bg-amber-50"
+                    className={`w-full mt-2 gap-1 border-dashed ${tone.label} ${tone.panel}`}
                 >
                     <Plus className="w-4 h-4" /> Thêm {field.fieldLabel.toLowerCase()}
                 </Button>
@@ -516,6 +707,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
     const renderBlock = (field: FormFieldDef) => {
         const subFields = getContainerSubFields(field.fieldKey);
         const blockData = getBlockData(field.fieldKey);
+        const tone = getTone(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`);
         const visibleSubFields = subFields.filter((sf) =>
             isContainerFieldVisible(sf, field.fieldKey, blockData)
         );
@@ -525,12 +717,15 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         }
 
         return (
-            <div className="space-y-3 border border-amber-200 rounded-lg p-4 bg-amber-50/30">
+            <div className={`space-y-3 rounded-lg border border-l-4 p-4 ${tone.panelStrong} ${tone.item}`}>
                 {visibleSubFields.map((sf) => {
+                    if (isPresentationField(sf)) {
+                        return <div key={sf.fieldKey}>{renderPresentationField(sf)}</div>;
+                    }
                     const errKey = `${field.fieldKey}.${sf.subFieldKey}`;
                     return (
                         <div key={sf.subFieldKey} className="space-y-1">
-                            <Label className="text-sm">
+                            <Label className="text-sm font-medium text-stone-700">
                                 {sf.fieldLabel}
                                 {sf.required && <span className="text-red-500 ml-1">*</span>}
                             </Label>
@@ -557,6 +752,9 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         const value = formData[field.fieldKey];
 
         switch (field.fieldType) {
+            case 'notice':
+            case 'heading':
+                return renderPresentationField(field);
             case 'group':
                 return renderGroup(field);
             case 'block':
@@ -779,7 +977,8 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
             )}
 
             <div className="space-y-4">
-                {sections.map((section) => {
+                {sections.map((section, sectionIndex) => {
+                    const sectionTone = getTone('', `${section.name}_${sectionIndex}`);
                     // Filter: show top-level fields that are visible, skip sub-fields (rendered by group)
                     const visibleFields = section.fields
                         .filter((f) => !f.groupKey && isFieldVisible(f))
@@ -792,33 +991,45 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         });
                     if (visibleFields.length === 0) return null;
                     return (
-                        <Card key={section.name}>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-base">{section.name}</CardTitle>
+                        <Card key={section.name} className={`overflow-hidden ${sectionTone.card}`}>
+                            <CardHeader className={`pb-3 ${sectionTone.header}`}>
+                                <div className="flex items-center gap-2.5">
+                                    <span className={`h-7 w-1.5 rounded-full ${sectionTone.accent}`} />
+                                    <CardTitle className={`text-base ${sectionTone.title}`}>{section.name}</CardTitle>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {visibleFields.map((field) => (
-                                    <div key={field.fieldKey} className="space-y-1.5">
-                                        {field.fieldType !== 'checkbox' && field.fieldType !== 'group' && field.fieldType !== 'block' && (
-                                            <Label htmlFor={field.fieldKey}>
-                                                {field.fieldLabel}
-                                                {field.required && <span className="text-red-500 ml-1">*</span>}
-                                            </Label>
-                                        )}
-                                        {(field.fieldType === 'group' || field.fieldType === 'block') && (
-                                            <Label className="text-base font-semibold text-stone-700">
-                                                {field.fieldLabel}
-                                            </Label>
-                                        )}
-                                        {renderField(field)}
-                                        {field.helperText && (
-                                            <p className="text-xs text-stone-400">{field.helperText}</p>
-                                        )}
-                                        {errors[field.fieldKey] && (
-                                            <p className="text-xs text-red-500">{errors[field.fieldKey]}</p>
-                                        )}
-                                    </div>
-                                ))}
+                                {visibleFields.map((field) => {
+                                    const fieldTone = field.fieldType === 'group' || field.fieldType === 'block'
+                                        ? getTone(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`)
+                                        : sectionTone;
+                                    return (
+                                        <div key={field.fieldKey} className="space-y-1.5">
+                                            {!isPresentationField(field) && field.fieldType !== 'checkbox' && field.fieldType !== 'group' && field.fieldType !== 'block' && (
+                                                <Label htmlFor={field.fieldKey} className="inline-flex items-center gap-2 font-medium text-stone-700">
+                                                    <span className={`h-2 w-2 rounded-full ${fieldTone.accent}`} />
+                                                    {field.fieldLabel}
+                                                    {field.required && <span className="text-red-500">*</span>}
+                                                </Label>
+                                            )}
+                                            {(field.fieldType === 'group' || field.fieldType === 'block') && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`h-6 w-1.5 rounded-full ${fieldTone.accent}`} />
+                                                    <Label className={`text-base font-semibold ${fieldTone.title}`}>
+                                                        {field.fieldLabel}
+                                                    </Label>
+                                                </div>
+                                            )}
+                                            {renderField(field)}
+                                            {!isPresentationField(field) && field.helperText && (
+                                                <p className="text-xs text-stone-500">{field.helperText}</p>
+                                            )}
+                                            {errors[field.fieldKey] && (
+                                                <p className="text-xs text-red-500">{errors[field.fieldKey]}</p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </CardContent>
                         </Card>
                     );

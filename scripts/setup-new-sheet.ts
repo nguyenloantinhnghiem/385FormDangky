@@ -58,11 +58,12 @@ const TABS: TabDef[] = [
         name: 'trường_biểu_mẫu',
         headers: ['Mã form', 'Nhóm', 'Mã trường', 'Tên trường', 'Loại trường', 'Bắt buộc', 'Gợi ý nhập', 'Các lựa chọn', 'Thứ tự', 'Ghi chú', 'Cột riêng', 'Điều kiện hiện'],
         sampleData: [
-            ['mau_form', 'Thông tin', 'ho_ten', 'Họ tên', 'text', 'TRUE', 'VD: Nguyễn Văn A', '', '1', '', 'TRUE', ''],
-            ['mau_form', 'Thông tin', 'so_dien_thoai', 'Số điện thoại', 'text', 'TRUE', 'VD: 0912345678', '', '2', '', 'TRUE', ''],
-            ['mau_form', 'Nội dung', 'noi_dung', 'Nội dung đăng ký', 'textarea', 'TRUE', 'Nhập nội dung...', '', '3', '', 'FALSE', ''],
-            ['mau_form', 'Nội dung', 'loai', 'Loại đăng ký', 'select', 'TRUE', '', 'Loại A|Loại B|Loại C', '4', '', 'TRUE', ''],
-            ['mau_form', 'Ghi chú', 'ghi_chu', 'Ghi chú thêm', 'textarea', 'FALSE', 'Nếu có...', '', '5', '', 'FALSE', ''],
+            ['mau_form', 'Hướng dẫn', 'luu_y_mau', 'Lưu ý trước khi đăng ký', 'notice', 'FALSE', 'Vui lòng đọc kỹ nội dung và điền đúng thông tin.', 'blue', '1', 'Dòng notice chỉ hiển thị để hướng dẫn, không ghi vào kết quả.', 'FALSE', ''],
+            ['mau_form', 'Thông tin', 'ho_ten', 'Họ tên', 'text', 'TRUE', 'VD: Nguyễn Văn A', '', '2', '', 'TRUE', ''],
+            ['mau_form', 'Thông tin', 'so_dien_thoai', 'Số điện thoại', 'text', 'TRUE', 'VD: 0912345678', '', '3', '', 'TRUE', ''],
+            ['mau_form', 'Nội dung', 'noi_dung', 'Nội dung đăng ký', 'textarea', 'TRUE', 'Nhập nội dung...', '', '4', '', 'FALSE', ''],
+            ['mau_form', 'Nội dung', 'loai', 'Loại đăng ký', 'select', 'TRUE', '', 'Loại A|Loại B|Loại C', '5', '', 'TRUE', ''],
+            ['mau_form', 'Ghi chú', 'ghi_chu', 'Ghi chú thêm', 'textarea', 'FALSE', 'Nếu có...', '', '6', '', 'FALSE', ''],
         ],
     },
     {

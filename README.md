@@ -187,7 +187,7 @@ npx tsx scripts/setup-new-sheet.ts
 | **E** | Loại trường | `text` |
 | **F** | Bắt buộc | `TRUE` |
 | **G** | Gợi ý nhập | `VD: Nguyễn Văn A` |
-| **H** | Các lựa chọn (ngăn bởi \|) hoặc mã `group`/`block` cha | `A\|B\|C` |
+| **H** | Các lựa chọn, mã cha, hoặc màu cho `block`/`group`/`notice`/`heading` | `A\|B\|C` |
 | **I** | Thứ tự | `1` |
 | **J** | Ghi chú | `Theo âm lịch` |
 | **K** | Cột riêng trong KQ | `TRUE` |
@@ -207,8 +207,36 @@ npx tsx scripts/setup-new-sheet.ts
 | `group` | Nhóm lặp lại (thêm/bớt được) |
 | `block` | Khối trường con cố định, không có nút thêm/bớt |
 | `khoi` / `khối` | Tên khác của `block` |
+| `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu |
+| `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu |
 | `image` | Tải ảnh |
 | `signature` | Chữ ký |
+
+### Màu sắc và hộp thông tin
+
+Với dòng `block`, `group`, `notice`, `heading`, cột **H** có thể điền màu:
+
+| Màu | Cách ghi ở cột H |
+|---|---|
+| Vàng/cảnh báo | `amber`, `vang`, `warning` |
+| Xanh dương/thông tin | `blue`, `xanh_duong`, `info` |
+| Xanh lá/thành công | `emerald`, `green`, `xanh_la`, `success` |
+| Tím | `purple`, `tim` |
+| Đỏ/quan trọng | `rose`, `red`, `do`, `danger` |
+| Xanh ngọc | `teal`, `ngoc` |
+| Xám/trung tính | `stone`, `gray`, `xam` |
+
+Ví dụ tạo hộp nhấn mạnh:
+
+| A | B | C | D | E | G | H | I | J |
+|---|---|---|---|---|---|---|---|---|
+| `mau_form` | `Hướng dẫn` | `luu_y_truoc_khi_dang_ky` | `Lưu ý trước khi đăng ký` | `notice` | `Vui lòng chuẩn bị đầy đủ thông tin trước khi gửi.` | `blue` | `1` | `Thông tin đã gửi sẽ được lưu vào Google Sheet.` |
+
+Ví dụ tạo tiêu đề phụ:
+
+| A | B | C | D | E | G | H | I |
+|---|---|---|---|---|---|---|---|
+| `mau_form` | `Nội dung` | `tieu_de_phap_hoi` | `Thông tin tham dự pháp hội` | `heading` | `Các mục bên dưới dùng để ban tổ chức sắp xếp chỗ ngồi.` | `emerald` | `2` |
 
 ### Khối điều kiện và điều kiện trong nhóm
 
@@ -219,7 +247,7 @@ Ví dụ: chọn "Loại A" thì hiện khối "Thông tin loại A":
 | A | B | C | D | E | H | I | L |
 |---|---|---|---|---|---|---|---|
 | `mau_form` | `Đăng ký` | `loai_dang_ky` | `Loại đăng ký` | `select` | `Loại A\|Loại B` | `1` | |
-| `mau_form` | `Đăng ký` | `khoi_loai_a` | `Thông tin loại A` | `block` | | `2` | `loai_dang_ky=Loại A` |
+| `mau_form` | `Đăng ký` | `khoi_loai_a` | `Thông tin loại A` | `block` | `amber` | `2` | `loai_dang_ky=Loại A` |
 | `mau_form` | `Đăng ký` | `khoi_loai_a.hinh_thuc` | `Hình thức` | `select` | `Một lần\|Nhiều lần` | `3` | |
 | `mau_form` | `Đăng ký` | `khoi_loai_a.so_lan` | `Số lần` | `number` | | `4` | `hinh_thuc=Nhiều lần` |
 
