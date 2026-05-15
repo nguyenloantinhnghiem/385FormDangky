@@ -39,11 +39,12 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | **E** | Loại trường | Xem bảng bên dưới | `text` |
 | **F** | Bắt buộc | TRUE / FALSE | `TRUE` |
 | **G** | Gợi ý | Placeholder | `VD: Nguyễn Văn A` |
-| **H** | Lựa chọn / nhóm cha / màu | Ngăn bởi `\|`, mã cha, hoặc màu cho `block`/`group`/`notice`/`heading` | `Nam\|Nữ` |
+| **H** | Lựa chọn / nhóm cha | Ngăn bởi `\|`, hoặc mã `group`/`block` cha | `Nam\|Nữ` |
 | **I** | Thứ tự | Số | `1` |
 | **J** | Ghi chú | Text nhỏ dưới input | `Ghi theo CCCD` |
 | **K** | Cột riêng | TRUE = cột riêng trong kết quả | `TRUE` |
 | **L** | Điều kiện hiện | `mã_trường=giá_trị` | `loai=Loại A` |
+| **M** | Màu sắc | Màu cho `block`/`group`/`notice`/`heading` | `blue` |
 
 ---
 
@@ -61,8 +62,8 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | `group` | Nhóm lặp lại (thêm/bớt) | Không |
 | `block` | Khối trường con cố định, không thêm/bớt | Không |
 | `khoi` / `khối` | Tên khác của `block` | Không |
-| `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu | Màu |
-| `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu | Màu |
+| `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu | Không |
+| `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu | Không |
 | `image` | Tải ảnh | Không |
 | `signature` | Chữ ký | Không |
 
@@ -97,9 +98,9 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 
 ### 5a. Màu sắc, tiêu đề phụ và hộp nhấn mạnh
 
-Hệ thống tự tô màu cho từng nhóm form. Nếu muốn tự chọn màu, điền cột **H** với các giá trị:
+Hệ thống tự tô màu cho từng nhóm form. Nếu muốn tự chọn màu, điền cột **M** với các giá trị. Cột **H** vẫn là cột **Các lựa chọn** hoặc mã nhóm cha.
 
-| Màu muốn dùng | Ghi ở cột H |
+| Màu muốn dùng | Ghi ở cột M |
 |---|---|
 | Vàng/cảnh báo | `amber`, `vang`, `warning` |
 | Xanh dương/thông tin | `blue`, `xanh_duong`, `info` |
@@ -111,15 +112,15 @@ Hệ thống tự tô màu cho từng nhóm form. Nếu muốn tự chọn màu,
 
 **Hộp thông tin/nhấn mạnh (`notice`)**
 
-| A | B | C | D | E | G | H | I | J |
-|---|---|---|---|---|---|---|---|---|
-| mau_form | Hướng dẫn | luu_y_truoc_khi_dang_ky | Lưu ý trước khi đăng ký | **notice** | Vui lòng chuẩn bị đầy đủ thông tin trước khi gửi. | blue | 1 | Thông tin đã gửi sẽ được lưu vào Google Sheet. |
+| A | B | C | D | E | G | H | I | J | M |
+|---|---|---|---|---|---|---|---|---|---|
+| mau_form | Hướng dẫn | luu_y_truoc_khi_dang_ky | Lưu ý trước khi đăng ký | **notice** | Vui lòng chuẩn bị đầy đủ thông tin trước khi gửi. | | 1 | Thông tin đã gửi sẽ được lưu vào Google Sheet. | blue |
 
 **Tiêu đề phụ (`heading`)**
 
-| A | B | C | D | E | G | H | I |
-|---|---|---|---|---|---|---|---|
-| mau_form | Nội dung | tieu_de_phap_hoi | Thông tin tham dự pháp hội | **heading** | Các mục bên dưới dùng để ban tổ chức sắp xếp chỗ ngồi. | emerald | 2 |
+| A | B | C | D | E | G | H | I | M |
+|---|---|---|---|---|---|---|---|---|
+| mau_form | Nội dung | tieu_de_phap_hoi | Thông tin tham dự pháp hội | **heading** | Các mục bên dưới dùng để ban tổ chức sắp xếp chỗ ngồi. | | 2 | emerald |
 
 ### 5b. Form có nhóm con (cha-con)
 
@@ -164,12 +165,12 @@ VD: Chỉ hiện trường "Mô tả" khi chọn nghiệp "TTTS":
 
 VD: Chọn "Loại A" thì hiện khối gồm "Hình thức" và "Số lần":
 
-| A | B | C | D | E | H | I | L |
-|---|---|---|---|---|---|---|---|
-| mau_form | Đăng ký | loai_dang_ky | Loại đăng ký | select | Loại A\|Loại B | 1 | |
-| mau_form | Đăng ký | khoi_loai_a | Thông tin loại A | **block** | amber | 2 | `loai_dang_ky=Loại A` |
-| mau_form | Đăng ký | khoi_loai_a.hinh_thuc | Hình thức | select | Một lần\|Nhiều lần | 3 | |
-| mau_form | Đăng ký | khoi_loai_a.so_lan | Số lần | number | | 4 | `hinh_thuc=Nhiều lần` |
+| A | B | C | D | E | H | I | L | M |
+|---|---|---|---|---|---|---|---|---|
+| mau_form | Đăng ký | loai_dang_ky | Loại đăng ký | select | Loại A\|Loại B | 1 | | |
+| mau_form | Đăng ký | khoi_loai_a | Thông tin loại A | **block** | | 2 | `loai_dang_ky=Loại A` | amber |
+| mau_form | Đăng ký | khoi_loai_a.hinh_thuc | Hình thức | select | Một lần\|Nhiều lần | 3 | | |
+| mau_form | Đăng ký | khoi_loai_a.so_lan | Số lần | number | | 4 | `hinh_thuc=Nhiều lần` | |
 
 Ghi chú:
 - Field con có thể trỏ về khối cha bằng cách đặt **cột H = mã block**, ví dụ `khoi_loai_a`.

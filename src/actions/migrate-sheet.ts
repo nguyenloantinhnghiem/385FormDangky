@@ -10,7 +10,7 @@
 import { getSheetsClient } from '@/lib/sheets/client';
 
 // Version bumped whenever Sheet structure changes
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 interface TabDef {
     name: string;
@@ -38,7 +38,7 @@ const REQUIRED_TABS: TabDef[] = [
     },
     {
         name: 'trường_biểu_mẫu',
-        headers: ['Mã form', 'Nhóm', 'Mã trường', 'Tên trường', 'Loại trường', 'Bắt buộc', 'Gợi ý nhập', 'Các lựa chọn', 'Thứ tự', 'Ghi chú', 'Cột riêng', 'Điều kiện hiện'],
+        headers: ['Mã form', 'Nhóm', 'Mã trường', 'Tên trường', 'Loại trường', 'Bắt buộc', 'Gợi ý nhập', 'Các lựa chọn', 'Thứ tự', 'Ghi chú', 'Cột riêng', 'Điều kiện hiện', 'Màu sắc'],
     },
     {
         name: 'đăng_ký',

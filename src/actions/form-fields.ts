@@ -26,6 +26,38 @@ export interface FormSection {
     fields: FormFieldDef[];
 }
 
+const COLUMN_FALLBACKS = {
+    formType: 0,
+    section: 1,
+    fieldKey: 2,
+    fieldLabel: 3,
+    fieldType: 4,
+    required: 5,
+    placeholder: 6,
+    options: 7,
+    order: 8,
+    helperText: 9,
+    separateColumn: 10,
+    showWhen: 11,
+    tone: 12,
+} as const;
+
+const HEADER_ALIASES = {
+    formType: ['ma_form', 'form_type'],
+    section: ['nhom', 'nhom_section', 'section'],
+    fieldKey: ['ma_truong', 'field_key'],
+    fieldLabel: ['ten_truong', 'field_label'],
+    fieldType: ['loai_truong', 'field_type'],
+    required: ['bat_buoc', 'required'],
+    placeholder: ['goi_y_nhap', 'goi_y', 'placeholder'],
+    options: ['cac_lua_chon', 'lua_chon', 'options'],
+    order: ['thu_tu', 'order'],
+    helperText: ['ghi_chu', 'ghi_chu_truong', 'helper_text'],
+    separateColumn: ['cot_rieng', 'separate_column'],
+    showWhen: ['dieu_kien_hien', 'show_when'],
+    tone: ['mau_sac', 'mau', 'mau_hien_thi', 'tone', 'color'],
+} as const;
+
 function normalizeKey(value: string): string {
     return value
         .normalize('NFD')
@@ -34,6 +66,27 @@ function normalizeKey(value: string): string {
         .replace(/đ/g, 'd')
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
+}
+
+function buildHeaderMap(headers: string[]): Map<string, number> {
+    const map = new Map<string, number>();
+    headers.forEach((header, index) => {
+        const key = normalizeKey(header || '');
+        if (key && !map.has(key)) map.set(key, index);
+    });
+    return map;
+}
+
+function getCell(
+    row: string[],
+    headerMap: Map<string, number>,
+    field: keyof typeof COLUMN_FALLBACKS,
+): string {
+    for (const alias of HEADER_ALIASES[field]) {
+        const index = headerMap.get(alias);
+        if (index !== undefined) return row[index] || '';
+    }
+    return row[COLUMN_FALLBACKS[field]] || '';
 }
 
 function normalizeFieldType(value: string): FormFieldDef['fieldType'] {
@@ -67,26 +120,29 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "'trường_biểu_mẫu'!A:L",
+            range: "'trường_biểu_mẫu'!A:Z",
         });
         const rows = (res.data.values as string[][]) || [];
         if (rows.length < 2) return [];
+        const headerMap = buildHeaderMap(rows[0] || []);
 
         // First pass: collect all container-type field keys (group/block)
         const containerFieldKeys = new Set<string>();
         for (const row of rows.slice(1)) {
-            const fieldType = normalizeFieldType(row[4] || 'text');
-            if (row[0] === formType && (fieldType === 'group' || fieldType === 'block')) {
-                containerFieldKeys.add(row[2] || '');
+            const rowFormType = getCell(row, headerMap, 'formType');
+            const fieldType = normalizeFieldType(getCell(row, headerMap, 'fieldType') || 'text');
+            if (rowFormType === formType && (fieldType === 'group' || fieldType === 'block')) {
+                containerFieldKeys.add(getCell(row, headerMap, 'fieldKey') || '');
             }
         }
 
         const allFields: FormFieldDef[] = rows.slice(1)
-            .filter((row) => row[0] === formType)
+            .filter((row) => getCell(row, headerMap, 'formType') === formType)
             .map((row) => {
-                const fieldKey = row[2] || '';
-                const fieldType = normalizeFieldType(row[4] || 'text');
-                const optionsRaw = row[7] || '';
+                const fieldKey = getCell(row, headerMap, 'fieldKey');
+                const fieldType = normalizeFieldType(getCell(row, headerMap, 'fieldType') || 'text');
+                const optionsRaw = getCell(row, headerMap, 'options');
+                const toneRaw = getCell(row, headerMap, 'tone');
 
                 // Determine groupKey: either dot-notation OR column H references a group/block field
                 const isSubFieldDot = fieldKey.includes('.');
@@ -109,21 +165,24 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
                 const options = (supportsOptions && !isContainerRef && optionsRaw) ? optionsRaw.split('|').map((o) => o.trim()) : [];
 
                 return {
-                    formType: row[0] || '',
-                    section: row[1] || 'Thông tin',
+                    formType: getCell(row, headerMap, 'formType') || '',
+                    section: getCell(row, headerMap, 'section') || 'Thông tin',
                     fieldKey: isSubFieldDot ? fieldKey : fieldKey,
-                    fieldLabel: row[3] || '',
+                    fieldLabel: getCell(row, headerMap, 'fieldLabel') || '',
                     fieldType,
-                    required: (row[5] || 'FALSE').toUpperCase() === 'TRUE',
-                    placeholder: row[6] || '',
+                    required: (getCell(row, headerMap, 'required') || 'FALSE').toUpperCase() === 'TRUE',
+                    placeholder: getCell(row, headerMap, 'placeholder') || '',
                     options,
-                    order: parseInt(row[8] || '99', 10),
-                    helperText: row[9] || '',
-                    separateColumn: (row[10] || 'FALSE').toUpperCase() === 'TRUE',
-                    showWhen: row[11] && row[11].includes('=')
-                        ? { fieldKey: row[11].split('=')[0].trim(), value: row[11].split('=').slice(1).join('=').trim() }
+                    order: parseInt(getCell(row, headerMap, 'order') || '99', 10),
+                    helperText: getCell(row, headerMap, 'helperText') || '',
+                    separateColumn: (getCell(row, headerMap, 'separateColumn') || 'FALSE').toUpperCase() === 'TRUE',
+                    showWhen: getCell(row, headerMap, 'showWhen') && getCell(row, headerMap, 'showWhen').includes('=')
+                        ? {
+                            fieldKey: getCell(row, headerMap, 'showWhen').split('=')[0].trim(),
+                            value: getCell(row, headerMap, 'showWhen').split('=').slice(1).join('=').trim(),
+                        }
                         : null,
-                    tone: supportsTone && !isContainerRef ? optionsRaw.trim() : '',
+                    tone: supportsTone && !isContainerRef ? toneRaw.trim() : '',
                     groupKey,
                     subFieldKey,
                 };
