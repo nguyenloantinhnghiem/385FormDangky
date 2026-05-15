@@ -122,7 +122,26 @@ Hệ thống tự tô màu cho từng nhóm form. Nếu muốn tự chọn màu,
 |---|---|---|---|---|---|---|---|---|
 | mau_form | Nội dung | tieu_de_phap_hoi | Thông tin tham dự pháp hội | **heading** | Các mục bên dưới dùng để ban tổ chức sắp xếp chỗ ngồi. | | 2 | emerald |
 
-### 5b. Form có nhóm con (cha-con)
+### 5b. In đậm, in nghiêng trong đoạn hướng dẫn
+
+Có thể ghi Markdown nhẹ trong cột **G** và **J** cho `notice`, `heading`, hoặc ghi chú dưới trường nhập.
+
+| Muốn hiển thị | Ghi trong Google Sheet |
+|---|---|
+| In đậm | `**Nội dung quan trọng**` |
+| In nghiêng | `*Nội dung cần lưu ý*` |
+| Vừa đậm vừa nghiêng | `***Nội dung rất quan trọng***` |
+| Gạch đầu dòng | Mỗi dòng bắt đầu bằng `- ` |
+
+Ví dụ ghi trong cột **J**:
+
+```text
+**Lưu ý trước khi đăng ký**
+- Kiểm tra kỹ họ tên và số điện thoại.
+- *Nếu nhập sai, ban tổ chức có thể không liên hệ được.*
+```
+
+### 5c. Form có nhóm con (cha-con)
 
 VD: "Đăng ký AVLH" → bấm vào → chọn "Trường hợp 1" hoặc "Trường hợp 2"
 

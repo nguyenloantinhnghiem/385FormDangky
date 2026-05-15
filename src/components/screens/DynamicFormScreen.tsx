@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { getFormFields, type FormSection, type FormFieldDef } from '@/actions/form-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -228,6 +228,80 @@ function getTone(rawTone: string | undefined, seed: string) {
 
 function isPresentationField(field: FormFieldDef): boolean {
     return field.fieldType === 'notice' || field.fieldType === 'heading';
+}
+
+const INLINE_MARKDOWN_PATTERN = /(\*\*\*[^*\n]+?\*\*\*|___[^_\n]+?___|\*\*[^*\n]+?\*\*|__[^_\n]+?__|\*[^*\n]+?\*|_[^_\n]+?_)/g;
+
+function renderInlineMarkdown(text: string): ReactNode[] {
+    const nodes: ReactNode[] = [];
+    const matches = [...text.matchAll(INLINE_MARKDOWN_PATTERN)];
+    let cursor = 0;
+
+    matches.forEach((match, index) => {
+        const token = match[0];
+        const start = match.index ?? 0;
+        if (start > cursor) nodes.push(text.slice(cursor, start));
+
+        if (
+            (token.startsWith('***') && token.endsWith('***'))
+            || (token.startsWith('___') && token.endsWith('___'))
+        ) {
+            nodes.push(
+                <strong key={`md-${index}`}>
+                    <em>{token.slice(3, -3)}</em>
+                </strong>
+            );
+        } else if (
+            (token.startsWith('**') && token.endsWith('**'))
+            || (token.startsWith('__') && token.endsWith('__'))
+        ) {
+            nodes.push(<strong key={`md-${index}`}>{token.slice(2, -2)}</strong>);
+        } else {
+            nodes.push(<em key={`md-${index}`}>{token.slice(1, -1)}</em>);
+        }
+
+        cursor = start + token.length;
+    });
+
+    if (cursor < text.length) nodes.push(text.slice(cursor));
+    return nodes;
+}
+
+function MarkdownText({ text, className }: { text: string; className?: string }) {
+    const blocks: ReactNode[] = [];
+    let listItems: string[] = [];
+
+    const flushList = (key: string) => {
+        if (listItems.length === 0) return;
+        const items = listItems;
+        listItems = [];
+        blocks.push(
+            <ul key={key} className="list-disc space-y-0.5 pl-5">
+                {items.map((item, index) => (
+                    <li key={`${key}-${index}`}>{renderInlineMarkdown(item)}</li>
+                ))}
+            </ul>
+        );
+    };
+
+    text.split(/\r?\n/).forEach((line, index) => {
+        const bullet = line.match(/^\s*(?:[-*•])\s+(.+)$/);
+        if (bullet) {
+            listItems.push(bullet[1]);
+            return;
+        }
+
+        flushList(`list-${index}`);
+        if (!line.trim()) {
+            blocks.push(<div key={`space-${index}`} className="h-1" />);
+            return;
+        }
+
+        blocks.push(<p key={`p-${index}`}>{renderInlineMarkdown(line)}</p>);
+    });
+
+    flushList('list-last');
+    return <div className={className}>{blocks}</div>;
 }
 
 export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, applicant, isReregistering = false, onEditApplicant, onNext, onBack }: DynamicFormScreenProps) {
@@ -509,9 +583,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         <div className="min-w-0">
                             <p className={`text-sm font-semibold ${tone.title}`}>{field.fieldLabel}</p>
                             {content && (
-                                <p className="mt-0.5 whitespace-pre-line text-xs leading-relaxed text-stone-600">
-                                    {content}
-                                </p>
+                                <MarkdownText text={content} className="mt-0.5 space-y-1 text-xs leading-relaxed text-stone-600" />
                             )}
                         </div>
                     </div>
@@ -528,9 +600,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                     <div className="min-w-0">
                         <p className="text-sm font-semibold">{field.fieldLabel}</p>
                         {content && (
-                            <p className="mt-1 whitespace-pre-line text-sm leading-relaxed opacity-85">
-                                {content}
-                            </p>
+                            <MarkdownText text={content} className="mt-1 space-y-1 text-sm leading-relaxed opacity-85" />
                         )}
                     </div>
                 </div>
@@ -679,7 +749,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                             (val) => handleGroupItemChange(field.fieldKey, index, sf.subFieldKey!, val)
                                         )}
                                         {sf.helperText && (
-                                            <p className="text-xs text-stone-400">{sf.helperText}</p>
+                                            <MarkdownText text={sf.helperText} className="space-y-1 text-xs leading-relaxed text-stone-400" />
                                         )}
                                         {errors[errKey] && (
                                             <p className="text-xs text-red-500">{errors[errKey]}</p>
@@ -735,7 +805,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                 (val) => handleBlockFieldChange(field.fieldKey, sf.subFieldKey!, val)
                             )}
                             {sf.helperText && (
-                                <p className="text-xs text-stone-400">{sf.helperText}</p>
+                                <MarkdownText text={sf.helperText} className="space-y-1 text-xs leading-relaxed text-stone-400" />
                             )}
                             {errors[errKey] && (
                                 <p className="text-xs text-red-500">{errors[errKey]}</p>
@@ -1022,7 +1092,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                             )}
                                             {renderField(field)}
                                             {!isPresentationField(field) && field.helperText && (
-                                                <p className="text-xs text-stone-500">{field.helperText}</p>
+                                                <MarkdownText text={field.helperText} className="space-y-1 text-xs leading-relaxed text-stone-500" />
                                             )}
                                             {errors[field.fieldKey] && (
                                                 <p className="text-xs text-red-500">{errors[field.fieldKey]}</p>

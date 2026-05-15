@@ -239,6 +239,25 @@ Ví dụ tạo tiêu đề phụ:
 |---|---|---|---|---|---|---|---|---|
 | `mau_form` | `Nội dung` | `tieu_de_phap_hoi` | `Thông tin tham dự pháp hội` | `heading` | `Các mục bên dưới dùng để ban tổ chức sắp xếp chỗ ngồi.` | | `2` | `emerald` |
 
+### In đậm, in nghiêng trong nội dung hướng dẫn
+
+Các cột **G** và **J** có thể dùng Markdown nhẹ cho `notice`, `heading` và ghi chú dưới trường nhập:
+
+| Muốn hiển thị | Cách ghi |
+|---|---|
+| In đậm | `**Nội dung quan trọng**` |
+| In nghiêng | `*Nội dung cần lưu ý*` |
+| Vừa đậm vừa nghiêng | `***Nội dung rất quan trọng***` |
+| Danh sách gạch đầu dòng | Mỗi dòng bắt đầu bằng `- ` |
+
+Ví dụ cột **J**:
+
+```text
+**Lưu ý quan trọng**
+- Mang theo CCCD khi đến nhận thẻ.
+- *Thông tin sai có thể bị từ chối.*
+```
+
 ### Khối điều kiện và điều kiện trong nhóm
 
 **`block`** dùng khi muốn chọn một mục rồi hiện cả một khối trường con, nhưng không cho người dùng bấm thêm nhiều dòng như `group`.
