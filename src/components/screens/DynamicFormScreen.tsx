@@ -230,6 +230,10 @@ function isPresentationField(field: FormFieldDef): boolean {
     return field.fieldType === 'notice' || field.fieldType === 'heading';
 }
 
+function compareFieldsByOrder(a: FormFieldDef, b: FormFieldDef): number {
+    return a.order - b.order || (a.sourceIndex ?? 0) - (b.sourceIndex ?? 0);
+}
+
 const INLINE_MARKDOWN_PATTERN = /(\*\*\*[^*\n]+?\*\*\*|___[^_\n]+?___|\*\*[^*\n]+?\*\*|__[^_\n]+?__|\*[^*\n]+?\*|_[^_\n]+?_)/g;
 
 function renderInlineMarkdown(text: string): ReactNode[] {
@@ -390,7 +394,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                 if (f.groupKey === containerKey) subFields.push(f);
             }
         }
-        return subFields;
+        return subFields.sort(compareFieldsByOrder);
     };
 
     const getGroupSubFields = getContainerSubFields;
@@ -1058,7 +1062,8 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                             return getContainerSubFields(f.fieldKey).some((sf) =>
                                 isContainerFieldVisible(sf, f.fieldKey, blockData)
                             );
-                        });
+                        })
+                        .sort(compareFieldsByOrder);
                     if (visibleFields.length === 0) return null;
                     return (
                         <Card key={section.name} className={`overflow-hidden ${sectionTone.card}`}>

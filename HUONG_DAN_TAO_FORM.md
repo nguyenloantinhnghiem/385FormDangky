@@ -100,6 +100,11 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 
 Hệ thống tự tô màu cho từng nhóm form. Nếu muốn tự chọn màu, điền cột **M** với các giá trị. Cột **H** vẫn là cột **Các lựa chọn** hoặc mã nhóm cha.
 
+Vị trí của `notice`/`heading` chạy theo cột **I - Thứ tự**:
+
+- Muốn hiện ở đầu section: cột **H** để trống, cột **C** dùng mã độc lập như `luu_y_dau_form`.
+- Muốn hiện trong `block`/`group`: cột **C** ghi dạng `ma_block.luu_y`, hoặc cột **H** ghi mã `block/group` cha. Khi đó thứ tự được tính trong nội bộ khối.
+
 | Màu muốn dùng | Ghi ở cột M |
 |---|---|
 | Vàng/cảnh báo | `amber`, `vang`, `warning` |

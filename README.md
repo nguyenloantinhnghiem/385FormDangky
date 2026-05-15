@@ -217,6 +217,8 @@ npx tsx scripts/setup-new-sheet.ts
 
 Với dòng `block`, `group`, `notice`, `heading`, cột **M** có thể điền màu. Cột **H** vẫn giữ đúng vai trò là **Các lựa chọn** hoặc mã nhóm cha.
 
+Vị trí hiển thị luôn theo cột **I - Thứ tự**. Nếu muốn `notice`/`heading` hiện ở đầu toàn bộ section, để cột **H** trống và mã trường ở cột **C** là mã độc lập, ví dụ `luu_y_dau_form`. Nếu muốn `notice`/`heading` nằm bên trong một `block`/`group`, cột **C** có thể ghi dạng `ma_block.luu_y` hoặc cột **H** ghi mã `block/group` cha; khi đó thứ tự được tính trong chính khối đó.
+
 | Màu | Cách ghi ở cột M |
 |---|---|
 | Vàng/cảnh báo | `amber`, `vang`, `warning` |

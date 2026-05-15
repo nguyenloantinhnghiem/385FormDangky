@@ -16,6 +16,7 @@ export interface FormFieldDef {
     separateColumn: boolean;
     showWhen: { fieldKey: string; value: string } | null;
     tone: string;
+    sourceIndex?: number;
     // Group support
     groupKey?: string;      // for sub-fields: which group they belong to
     subFieldKey?: string;   // for sub-fields: the key within the group
@@ -92,7 +93,7 @@ function getCell(
 function normalizeFieldType(value: string): FormFieldDef['fieldType'] {
     const raw = normalizeKey(value || 'text');
     if (['khoi', 'block'].includes(raw)) return 'block';
-    if (['notice', 'info', 'note', 'thong_tin', 'nhan_manh', 'canh_bao', 'luu_y'].includes(raw)) return 'notice';
+    if (['notice', 'notic', 'noti', 'info', 'note', 'thong_tin', 'thong_bao', 'nhan_manh', 'canh_bao', 'luu_y'].includes(raw)) return 'notice';
     if (['heading', 'title', 'tieu_de', 'de_muc'].includes(raw)) return 'heading';
 
     const allowed = new Set<FormFieldDef['fieldType']>([
@@ -113,6 +114,17 @@ function normalizeFieldType(value: string): FormFieldDef['fieldType'] {
     ]);
 
     return allowed.has(raw as FormFieldDef['fieldType']) ? raw as FormFieldDef['fieldType'] : 'text';
+}
+
+function parseOrder(value: string): number {
+    const normalized = value.trim().replace(',', '.');
+    if (!normalized) return 99;
+    const order = Number(normalized);
+    return Number.isFinite(order) ? order : 99;
+}
+
+function compareFields(a: FormFieldDef, b: FormFieldDef): number {
+    return a.order - b.order || (a.sourceIndex ?? 0) - (b.sourceIndex ?? 0);
 }
 
 export async function getFormFields(formType: string): Promise<FormSection[]> {
@@ -138,19 +150,20 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
 
         const allFields: FormFieldDef[] = rows.slice(1)
             .filter((row) => getCell(row, headerMap, 'formType') === formType)
-            .map((row) => {
+            .map((row, sourceIndex) => {
                 const fieldKey = getCell(row, headerMap, 'fieldKey');
                 const fieldType = normalizeFieldType(getCell(row, headerMap, 'fieldType') || 'text');
                 const optionsRaw = getCell(row, headerMap, 'options');
                 const toneRaw = getCell(row, headerMap, 'tone');
 
                 // Determine groupKey: either dot-notation OR column H references a group/block field
-                const isSubFieldDot = fieldKey.includes('.');
+                const dotParentKey = fieldKey.split('.')[0];
+                const isSubFieldDot = fieldKey.includes('.') && containerFieldKeys.has(dotParentKey);
                 let groupKey: string | undefined;
                 let subFieldKey: string | undefined;
 
                 if (isSubFieldDot) {
-                    groupKey = fieldKey.split('.')[0];
+                    groupKey = dotParentKey;
                     subFieldKey = fieldKey.split('.').slice(1).join('.');
                 } else if (fieldType !== 'group' && fieldType !== 'block' && optionsRaw && containerFieldKeys.has(optionsRaw)) {
                     // Column H contains a group/block field key → this is a sub-field
@@ -173,7 +186,7 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
                     required: (getCell(row, headerMap, 'required') || 'FALSE').toUpperCase() === 'TRUE',
                     placeholder: getCell(row, headerMap, 'placeholder') || '',
                     options,
-                    order: parseInt(getCell(row, headerMap, 'order') || '99', 10),
+                    order: parseOrder(getCell(row, headerMap, 'order')),
                     helperText: getCell(row, headerMap, 'helperText') || '',
                     separateColumn: (getCell(row, headerMap, 'separateColumn') || 'FALSE').toUpperCase() === 'TRUE',
                     showWhen: getCell(row, headerMap, 'showWhen') && getCell(row, headerMap, 'showWhen').includes('=')
@@ -183,12 +196,13 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
                         }
                         : null,
                     tone: supportsTone && !isContainerRef ? toneRaw.trim() : '',
+                    sourceIndex,
                     groupKey,
                     subFieldKey,
                 };
             })
             .filter((f) => f.fieldKey)
-            .sort((a, b) => a.order - b.order);
+            .sort(compareFields);
 
         // Group into sections
         const sectionMap = new Map<string, FormFieldDef[]>();
@@ -197,7 +211,7 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
             sectionMap.get(f.section)!.push(f);
         }
 
-        return Array.from(sectionMap.entries()).map(([name, fields]) => ({ name, fields }));
+        return Array.from(sectionMap.entries()).map(([name, fields]) => ({ name, fields: fields.sort(compareFields) }));
     } catch (err) {
         console.error('getFormFields error:', err);
         return [];
