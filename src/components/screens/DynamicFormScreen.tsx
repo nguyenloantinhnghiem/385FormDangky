@@ -375,7 +375,8 @@ function ReadingGateField({
                                 if (!element) return;
                                 setCanAccept(element.scrollHeight - element.scrollTop - element.clientHeight <= 12);
                             }}
-                            className="min-h-[18rem] max-h-[68vh] w-full overscroll-contain rounded-md border border-white/70 bg-white/80 px-4 py-3 text-sm leading-relaxed text-stone-700 shadow-inner sm:min-h-[22rem] md:min-h-[26rem]"
+                            className="h-[62vh] min-h-[16rem] max-h-[34rem] w-full overflow-y-auto overscroll-auto rounded-md border border-white/70 bg-white/80 px-4 py-3 text-sm leading-relaxed text-stone-700 shadow-inner touch-pan-y sm:h-[58vh] sm:min-h-[22rem] md:min-h-[26rem]"
+                            style={{ WebkitOverflowScrolling: 'touch' }}
                         >
                             <MarkdownText text={content} className="space-y-1.5" />
                         </div>
