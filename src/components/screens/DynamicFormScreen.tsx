@@ -320,10 +320,12 @@ function ReadingGateField({
     field,
     accepted,
     onAccept,
+    error,
 }: {
     field: FormFieldDef;
     accepted: boolean;
     onAccept: () => void;
+    error?: string;
 }) {
     const content = [field.placeholder, field.helperText].filter(Boolean).join('\n');
     const toneName = getToneName(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`);
@@ -353,16 +355,16 @@ function ReadingGateField({
     }, [content]);
 
     return (
-        <div className={`rounded-lg border ${accepted ? tone.panelStrong : tone.notice} px-3 py-3`}>
-            <div className="flex items-start gap-2.5">
-                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${accepted ? 'bg-emerald-100 text-emerald-700' : tone.icon}`}>
+        <div className={`w-full rounded-lg border ${accepted ? tone.panelStrong : tone.notice} px-4 py-4 sm:px-5`}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${accepted ? 'bg-emerald-100 text-emerald-700' : tone.icon}`}>
                     {accepted ? <CheckCircle2 className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                 </span>
-                <div className="min-w-0 flex-1 space-y-2">
+                <div className="min-w-0 flex-1 space-y-3">
                     <div>
-                        <p className={`text-sm font-semibold ${tone.title}`}>{field.fieldLabel}</p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-stone-500">
-                            Vui lòng đọc hết nội dung này trước khi điền các mục tiếp theo.
+                        <p className={`text-base font-semibold ${tone.title}`}>{field.fieldLabel}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-stone-600">
+                            Vui lòng đọc hết nội dung và xác nhận cam kết trước khi điền các mục tiếp theo.
                         </p>
                     </div>
                     {content && (
@@ -373,7 +375,7 @@ function ReadingGateField({
                                 if (!element) return;
                                 setCanAccept(element.scrollHeight - element.scrollTop - element.clientHeight <= 12);
                             }}
-                            className="max-h-56 overflow-y-auto rounded-md border border-white/70 bg-white/70 px-3 py-2 text-sm leading-relaxed text-stone-700 shadow-inner"
+                            className="min-h-[18rem] max-h-[68vh] w-full overscroll-contain rounded-md border border-white/70 bg-white/80 px-4 py-3 text-sm leading-relaxed text-stone-700 shadow-inner sm:min-h-[22rem] md:min-h-[26rem]"
                         >
                             <MarkdownText text={content} className="space-y-1.5" />
                         </div>
@@ -390,11 +392,12 @@ function ReadingGateField({
                             variant="outline"
                             disabled={!canAccept}
                             onClick={onAccept}
-                            className={`h-8 ${tone.label} ${tone.panel}`}
+                            className={`min-h-9 whitespace-normal text-left ${tone.label} ${tone.panel}`}
                         >
-                            {canAccept ? 'Tôi đã đọc xong' : 'Cuộn xuống cuối nội dung để xác nhận'}
+                            {canAccept ? 'Tôi xác nhận đã đọc xong và cam kết thực hiện' : 'Cuộn xuống cuối nội dung để xác nhận'}
                         </Button>
                     )}
+                    {error && <p className="text-xs font-medium text-red-500">{error}</p>}
                 </div>
             </div>
         </div>
@@ -558,14 +561,42 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         return conditionMatches(depValue, field.showWhen.value);
     };
 
+    const getUnlockedContainerSubFields = (
+        containerKey: string,
+        itemData: Record<string, unknown>,
+    ): FormFieldDef[] => {
+        const fields: FormFieldDef[] = [];
+        for (const sf of getContainerSubFields(containerKey)) {
+            if (!isContainerFieldVisible(sf, containerKey, itemData)) continue;
+            fields.push(sf);
+            if (isReadingField(sf) && !acceptedReadings[sf.fieldKey]) break;
+        }
+        return fields;
+    };
+
+    const hasLockedReadingInContainer = (
+        containerKey: string,
+        itemData: Record<string, unknown>,
+    ): boolean => {
+        return getContainerSubFields(containerKey).some((sf) =>
+            isContainerFieldVisible(sf, containerKey, itemData)
+            && isReadingField(sf)
+            && !acceptedReadings[sf.fieldKey]
+        );
+    };
+
     const getVisibleContainerData = (
         containerKey: string,
         itemData: Record<string, unknown>,
     ): Record<string, unknown> => {
         const visibleData: Record<string, unknown> = {};
         for (const sf of getContainerSubFields(containerKey)) {
-            if (isPresentationField(sf)) continue;
             if (!sf.subFieldKey || !isContainerFieldVisible(sf, containerKey, itemData)) continue;
+            if (isReadingField(sf)) {
+                if (!acceptedReadings[sf.fieldKey]) break;
+                continue;
+            }
+            if (isPresentationField(sf)) continue;
             const value = itemData[sf.subFieldKey];
             if (hasMeaningfulValue(value)) visibleData[sf.subFieldKey] = value;
         }
@@ -598,10 +629,19 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                     // Validate group sub-fields
                     const subFields = getGroupSubFields(f.fieldKey);
                     const items = getGroupItems(f.fieldKey);
+                    let groupBlockedByReading = false;
                     for (let i = 0; i < items.length; i++) {
                         for (const sf of subFields) {
-                            if (isPresentationField(sf)) continue;
                             if (!isContainerFieldVisible(sf, f.fieldKey, items[i])) continue;
+                            if (isReadingField(sf)) {
+                                if (!acceptedReadings[sf.fieldKey]) {
+                                    newErrors[sf.fieldKey] = `Vui lòng đọc xong ${sf.fieldLabel || 'tài liệu'} trước khi tiếp tục`;
+                                    groupBlockedByReading = true;
+                                    break;
+                                }
+                                continue;
+                            }
+                            if (isPresentationField(sf)) continue;
                             if (sf.required) {
                                 const val = items[i][sf.subFieldKey!];
                                 if (
@@ -615,12 +655,26 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                 }
                             }
                         }
+                        if (groupBlockedByReading) break;
+                    }
+                    if (groupBlockedByReading) {
+                        blockedByReading = true;
+                        break;
                     }
                 } else if (f.fieldType === 'block') {
                     const blockData = getBlockData(f.fieldKey);
+                    let blockBlockedByReading = false;
                     for (const sf of getContainerSubFields(f.fieldKey)) {
-                        if (isPresentationField(sf)) continue;
                         if (!sf.subFieldKey || !isContainerFieldVisible(sf, f.fieldKey, blockData)) continue;
+                        if (isReadingField(sf)) {
+                            if (!acceptedReadings[sf.fieldKey]) {
+                                newErrors[sf.fieldKey] = `Vui lòng đọc xong ${sf.fieldLabel || 'tài liệu'} trước khi tiếp tục`;
+                                blockBlockedByReading = true;
+                                break;
+                            }
+                            continue;
+                        }
+                        if (isPresentationField(sf)) continue;
                         if (sf.required) {
                             const val = blockData[sf.subFieldKey];
                             if (
@@ -632,6 +686,10 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                 newErrors[`${f.fieldKey}.${sf.subFieldKey}`] = `Vui lòng nhập/chọn ${sf.fieldLabel}`;
                             }
                         }
+                    }
+                    if (blockBlockedByReading) {
+                        blockedByReading = true;
+                        break;
                     }
                 } else if (f.required) {
                     const val = formData[f.fieldKey];
@@ -854,7 +912,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         </div>
                         <div className="space-y-3">
                             {subFields.map((sf) => {
-                                if (!isContainerFieldVisible(sf, field.fieldKey, item)) return null;
+                                if (!getUnlockedContainerSubFields(field.fieldKey, item).includes(sf)) return null;
                                 if (isReadingField(sf)) {
                                     return (
                                         <div key={sf.fieldKey}>
@@ -862,6 +920,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                                 field={sf}
                                                 accepted={!!acceptedReadings[sf.fieldKey]}
                                                 onAccept={() => acceptReading(sf.fieldKey)}
+                                                error={errors[sf.fieldKey]}
                                             />
                                         </div>
                                     );
@@ -909,12 +968,9 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
 
     // ========== RENDER BLOCK ==========
     const renderBlock = (field: FormFieldDef) => {
-        const subFields = getContainerSubFields(field.fieldKey);
         const blockData = getBlockData(field.fieldKey);
         const tone = getTone(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`);
-        const visibleSubFields = subFields.filter((sf) =>
-            isContainerFieldVisible(sf, field.fieldKey, blockData)
-        );
+        const visibleSubFields = getUnlockedContainerSubFields(field.fieldKey, blockData);
 
         if (visibleSubFields.length === 0) {
             return null;
@@ -930,6 +986,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                     field={sf}
                                     accepted={!!acceptedReadings[sf.fieldKey]}
                                     onAccept={() => acceptReading(sf.fieldKey)}
+                                    error={errors[sf.fieldKey]}
                                 />
                             </div>
                         );
@@ -977,6 +1034,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         field={field}
                         accepted={!!acceptedReadings[field.fieldKey]}
                         onAccept={() => acceptReading(field.fieldKey)}
+                        error={errors[field.fieldKey]}
                     />
                 );
             case 'group':
@@ -1116,7 +1174,13 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                 const fields: FormFieldDef[] = [];
                 for (const field of getSectionVisibleFields(section)) {
                     fields.push(field);
-                    if (isReadingField(field) && !acceptedReadings[field.fieldKey]) {
+                    const hasLockedTopLevelReading = isReadingField(field) && !acceptedReadings[field.fieldKey];
+                    const hasLockedBlockReading = field.fieldType === 'block'
+                        && hasLockedReadingInContainer(field.fieldKey, getBlockData(field.fieldKey));
+                    const hasLockedGroupReading = field.fieldType === 'group'
+                        && getGroupItems(field.fieldKey).some((item) => hasLockedReadingInContainer(field.fieldKey, item));
+
+                    if (hasLockedTopLevelReading || hasLockedBlockReading || hasLockedGroupReading) {
                         blockedByReading = true;
                         break;
                     }

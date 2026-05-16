@@ -64,7 +64,7 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | `khoi` / `khối` | Tên khác của `block` | Không |
 | `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu | Không |
 | `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu | Không |
-| `reading` / `tai_lieu` / `yeu_cau_doc` | Tài liệu bắt buộc đọc xong mới hiện trường phía sau | Không |
+| `reading` / `tai_lieu` / `yeu_cau_doc` / `xac_nhan_cam_ket` | Tài liệu/cam kết bắt buộc đọc xong mới hiện trường phía sau | Không |
 | `image` | Tải ảnh | Không |
 | `signature` | Chữ ký | Không |
 
@@ -130,7 +130,7 @@ Vị trí của `notice`/`heading` chạy theo cột **I - Thứ tự**:
 
 ### 5b. Tài liệu bắt buộc đọc trước khi điền form
 
-Dùng loại trường `reading` nếu muốn người đăng ký phải đọc tài liệu/quy định/cam kết trước. Khi chưa bấm **Tôi đã đọc xong**, các trường có thứ tự phía sau sẽ chưa hiện ra.
+Dùng loại trường `reading` nếu muốn người đăng ký phải đọc tài liệu/quy định/cam kết trước. Khi chưa bấm **Tôi xác nhận đã đọc xong và cam kết thực hiện**, các trường có thứ tự phía sau sẽ chưa hiện ra.
 
 | A | B | C | D | E | G | H | I | J | M |
 |---|---|---|---|---|---|---|---|---|---|
@@ -141,6 +141,8 @@ Ghi chú:
 - Cột **G** là nội dung chính cần đọc.
 - Cột **J** là nội dung bổ sung, có thể xuống dòng và dùng Markdown.
 - Cột **I** càng nhỏ thì tài liệu càng hiện sớm.
+- Có thể ghi cột **E** là `xac_nhan_cam_ket` nếu muốn gọi rõ đây là phần cam kết.
+- Nếu đặt trong `block` hoặc `group`, trường phía sau trong khối và trường phía sau khối cũng bị khóa cho đến khi xác nhận.
 
 ### 5c. In đậm, in nghiêng trong đoạn hướng dẫn
 

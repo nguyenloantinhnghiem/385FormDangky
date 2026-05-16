@@ -95,7 +95,7 @@ function normalizeFieldType(value: string): FormFieldDef['fieldType'] {
     if (['khoi', 'block'].includes(raw)) return 'block';
     if (['notice', 'notic', 'noti', 'info', 'note', 'thong_tin', 'thong_bao', 'nhan_manh', 'canh_bao', 'luu_y'].includes(raw)) return 'notice';
     if (['heading', 'title', 'tieu_de', 'de_muc'].includes(raw)) return 'heading';
-    if (['reading', 'read_required', 'document', 'tai_lieu', 'tai_lieu_doc', 'yeu_cau_doc', 'doc_bat_buoc', 'quy_dinh', 'cam_ket'].includes(raw)) return 'reading';
+    if (['reading', 'read_required', 'document', 'tai_lieu', 'tai_lieu_doc', 'yeu_cau_doc', 'doc_bat_buoc', 'quy_dinh', 'cam_ket', 'xac_nhan_cam_ket', 'yeu_cau_xac_nhan'].includes(raw)) return 'reading';
 
     const allowed = new Set<FormFieldDef['fieldType']>([
         'text',
