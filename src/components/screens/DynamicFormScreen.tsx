@@ -376,66 +376,66 @@ function ReadingGateField({
     }, [content]);
 
     return (
-        <div className={`w-full rounded-lg border ${accepted ? tone.panelStrong : tone.notice} px-4 py-4 sm:px-5`}>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${accepted ? 'bg-emerald-100 text-emerald-700' : tone.icon}`}>
-                    {accepted ? <CheckCircle2 className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                </span>
-                <div className="min-w-0 flex-1 space-y-3">
-                    <div>
+        <div className={`w-full rounded-lg border ${accepted ? tone.panelStrong : tone.notice} px-3 py-4 sm:px-5`}>
+            <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${accepted ? 'bg-emerald-100 text-emerald-700' : tone.icon}`}>
+                        {accepted ? <CheckCircle2 className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
                         <p className={`text-base font-semibold ${tone.title}`}>{field.fieldLabel}</p>
                         <p className="mt-1 text-sm leading-relaxed text-stone-600">
                             {promptText}
                         </p>
                     </div>
-                    {content && (
-                        <div
-                            ref={contentRef}
-                            onScroll={() => {
-                                const element = contentRef.current;
-                                if (!element) return;
-                                setCanAccept(element.scrollHeight - element.scrollTop - element.clientHeight <= 12);
-                            }}
-                            className="h-[62vh] min-h-[16rem] max-h-[34rem] w-full overflow-y-auto overscroll-auto rounded-md border border-white/70 bg-white/80 px-4 py-3 text-sm leading-relaxed text-stone-700 shadow-inner touch-pan-y sm:h-[58vh] sm:min-h-[22rem] md:min-h-[26rem]"
-                            style={{ WebkitOverflowScrolling: 'touch' }}
-                        >
-                            <MarkdownText text={content} className="space-y-1.5" />
+                </div>
+                {content && (
+                    <div
+                        ref={contentRef}
+                        onScroll={() => {
+                            const element = contentRef.current;
+                            if (!element) return;
+                            setCanAccept(element.scrollHeight - element.scrollTop - element.clientHeight <= 12);
+                        }}
+                        className="h-[62vh] min-h-[16rem] max-h-[34rem] w-full overflow-y-auto overscroll-auto rounded-md border border-white/70 bg-white/80 px-3 py-3 text-sm leading-relaxed text-stone-700 shadow-inner touch-pan-y sm:h-[58vh] sm:min-h-[22rem] sm:px-4 md:min-h-[26rem]"
+                        style={{ WebkitOverflowScrolling: 'touch' }}
+                    >
+                        <MarkdownText text={content} className="space-y-1.5" />
+                    </div>
+                )}
+                <div className="sticky bottom-3 z-10 rounded-lg border border-white/80 bg-white/95 p-2 shadow-lg shadow-stone-200/70 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+                    {accepted ? (
+                        <div className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold leading-snug text-emerald-800 sm:text-base">
+                            <CheckCircle2 className="h-5 w-5 shrink-0" />
+                            <span>{acceptedText}</span>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <Button
+                                type="button"
+                                size="lg"
+                                variant={canAccept ? 'default' : 'outline'}
+                                disabled={!canAccept}
+                                onClick={onAccept}
+                                className={`min-h-14 w-full whitespace-normal rounded-lg px-4 py-3 text-center text-base font-bold leading-snug shadow-sm transition-all sm:min-h-12 sm:text-base ${canAccept
+                                    ? 'animate-confirm-attention border-emerald-600 bg-emerald-600 text-white shadow-emerald-200/80 hover:border-emerald-700 hover:bg-emerald-700 focus-visible:ring-4 focus-visible:ring-emerald-200'
+                                    : 'border-amber-300 bg-amber-50 text-amber-900 disabled:cursor-not-allowed disabled:opacity-100'
+                                    }`}
+                            >
+                                <span className="flex w-full items-center justify-center gap-2">
+                                    {canAccept ? <CheckCircle2 className="h-5 w-5 shrink-0" /> : <FileText className="h-5 w-5 shrink-0" />}
+                                    <span>{canAccept ? confirmText : pendingText}</span>
+                                </span>
+                            </Button>
+                            {!canAccept && (
+                                <p className="text-center text-xs font-medium leading-relaxed text-amber-800 sm:text-sm">
+                                    Nút xác nhận sẽ sáng lên sau khi đọc hết nội dung.
+                                </p>
+                            )}
                         </div>
                     )}
-                    <div className="sticky bottom-3 z-10 rounded-lg border border-white/80 bg-white/95 p-2 shadow-lg shadow-stone-200/70 backdrop-blur supports-[backdrop-filter]:bg-white/85">
-                        {accepted ? (
-                            <div className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold leading-snug text-emerald-800 sm:text-base">
-                                <CheckCircle2 className="h-5 w-5 shrink-0" />
-                                <span>{acceptedText}</span>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                <Button
-                                    type="button"
-                                    size="lg"
-                                    variant={canAccept ? 'default' : 'outline'}
-                                    disabled={!canAccept}
-                                    onClick={onAccept}
-                                    className={`min-h-14 w-full whitespace-normal rounded-lg px-4 py-3 text-center text-base font-bold leading-snug shadow-sm transition-all sm:min-h-12 sm:text-base ${canAccept
-                                        ? 'animate-confirm-attention border-emerald-600 bg-emerald-600 text-white shadow-emerald-200/80 hover:border-emerald-700 hover:bg-emerald-700 focus-visible:ring-4 focus-visible:ring-emerald-200'
-                                        : 'border-amber-300 bg-amber-50 text-amber-900 disabled:cursor-not-allowed disabled:opacity-100'
-                                        }`}
-                                >
-                                    <span className="flex w-full items-center justify-center gap-2">
-                                        {canAccept ? <CheckCircle2 className="h-5 w-5 shrink-0" /> : <FileText className="h-5 w-5 shrink-0" />}
-                                        <span>{canAccept ? confirmText : pendingText}</span>
-                                    </span>
-                                </Button>
-                                {!canAccept && (
-                                    <p className="text-center text-xs font-medium leading-relaxed text-amber-800 sm:text-sm">
-                                        Nút xác nhận sẽ sáng lên sau khi đọc hết nội dung.
-                                    </p>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                    {error && <p className="text-xs font-medium text-red-500">{error}</p>}
                 </div>
+                {error && <p className="text-xs font-medium text-red-500">{error}</p>}
             </div>
         </div>
     );
