@@ -402,23 +402,38 @@ function ReadingGateField({
                             <MarkdownText text={content} className="space-y-1.5" />
                         </div>
                     )}
-                    {accepted ? (
-                        <div className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            {acceptedText}
-                        </div>
-                    ) : (
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={!canAccept}
-                            onClick={onAccept}
-                            className={`min-h-9 whitespace-normal text-left ${tone.label} ${tone.panel}`}
-                        >
-                            {canAccept ? confirmText : pendingText}
-                        </Button>
-                    )}
+                    <div className="sticky bottom-3 z-10 rounded-lg border border-white/80 bg-white/95 p-2 shadow-lg shadow-stone-200/70 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+                        {accepted ? (
+                            <div className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold leading-snug text-emerald-800 sm:text-base">
+                                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                                <span>{acceptedText}</span>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    variant={canAccept ? 'default' : 'outline'}
+                                    disabled={!canAccept}
+                                    onClick={onAccept}
+                                    className={`min-h-14 w-full whitespace-normal rounded-lg px-4 py-3 text-center text-base font-bold leading-snug shadow-sm transition-all sm:min-h-12 sm:text-base ${canAccept
+                                        ? 'animate-confirm-attention border-emerald-600 bg-emerald-600 text-white shadow-emerald-200/80 hover:border-emerald-700 hover:bg-emerald-700 focus-visible:ring-4 focus-visible:ring-emerald-200'
+                                        : 'border-amber-300 bg-amber-50 text-amber-900 disabled:cursor-not-allowed disabled:opacity-100'
+                                        }`}
+                                >
+                                    <span className="flex w-full items-center justify-center gap-2">
+                                        {canAccept ? <CheckCircle2 className="h-5 w-5 shrink-0" /> : <FileText className="h-5 w-5 shrink-0" />}
+                                        <span>{canAccept ? confirmText : pendingText}</span>
+                                    </span>
+                                </Button>
+                                {!canAccept && (
+                                    <p className="text-center text-xs font-medium leading-relaxed text-amber-800 sm:text-sm">
+                                        Nút xác nhận sẽ sáng lên sau khi đọc hết nội dung.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
                     {error && <p className="text-xs font-medium text-red-500">{error}</p>}
                 </div>
             </div>
