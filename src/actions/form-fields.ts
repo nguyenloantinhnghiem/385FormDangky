@@ -7,7 +7,7 @@ export interface FormFieldDef {
     section: string;
     fieldKey: string;
     fieldLabel: string;
-    fieldType: 'text' | 'textarea' | 'select' | 'checkbox' | 'number' | 'repeatable' | 'multichoice' | 'radio' | 'group' | 'block' | 'notice' | 'heading' | 'reading' | 'image' | 'signature';
+    fieldType: 'text' | 'textarea' | 'select' | 'checkbox' | 'number' | 'repeatable' | 'multichoice' | 'radio' | 'group' | 'block' | 'notice' | 'heading' | 'reading' | 'video' | 'image' | 'signature';
     required: boolean;
     placeholder: string;
     options: string[]; // for select
@@ -108,6 +108,7 @@ function normalizeFieldType(value: string): FormFieldDef['fieldType'] {
     if (['notice', 'notic', 'noti', 'info', 'note', 'thong_tin', 'thong_bao', 'nhan_manh', 'canh_bao', 'luu_y'].includes(raw)) return 'notice';
     if (['heading', 'title', 'tieu_de', 'de_muc'].includes(raw)) return 'heading';
     if (['reading', 'read_required', 'document', 'tai_lieu', 'tai_lieu_doc', 'yeu_cau_doc', 'doc_bat_buoc', 'quy_dinh', 'cam_ket', 'xac_nhan_cam_ket', 'yeu_cau_xac_nhan'].includes(raw)) return 'reading';
+    if (['video', 'embed_video', 'video_embed', 'youtube', 'video_huong_dan', 'huong_dan_video'].includes(raw)) return 'video';
 
     const allowed = new Set<FormFieldDef['fieldType']>([
         'text',
@@ -123,6 +124,7 @@ function normalizeFieldType(value: string): FormFieldDef['fieldType'] {
         'notice',
         'heading',
         'reading',
+        'video',
         'image',
         'signature',
     ]);

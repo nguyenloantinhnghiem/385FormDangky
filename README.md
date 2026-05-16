@@ -215,6 +215,7 @@ npx tsx scripts/setup-new-sheet.ts
 | `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu |
 | `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu |
 | `reading` / `tai_lieu` / `yeu_cau_doc` / `xac_nhan_cam_ket` | Tài liệu/cam kết bắt buộc đọc xong mới hiện các trường phía sau |
+| `video` / `video_huong_dan` / `youtube` | Nhúng video hướng dẫn trực tiếp trong form, không ghi dữ liệu |
 | `image` | Tải ảnh |
 | `signature` | Chữ ký |
 
@@ -272,9 +273,29 @@ Ví dụ:
 
 Nếu đặt `reading` trong `block` hoặc `group`, các trường phía sau trong khối đó và các trường phía sau khối cũng sẽ tạm ẩn cho đến khi người đăng ký xác nhận đã đọc.
 
+### Video hướng dẫn trong form
+
+Dùng loại trường `video` nếu muốn nhúng video tại một vị trí bất kỳ trong form. Trường này chỉ hiển thị hướng dẫn, không ghi dữ liệu vào kết quả.
+
+| Cột | Cách ghi |
+|---|---|
+| **C** | Mã trường, ví dụ `video_huong_dan` |
+| **D** | Tiêu đề video |
+| **E** | `video`, `video_huong_dan`, `youtube`, `embed_video` |
+| **G** | Link video YouTube/Vimeo |
+| **J** | Mô tả dưới tiêu đề video, có thể dùng Markdown |
+| **I** | Thứ tự hiển thị |
+| **M** | Màu hiển thị, ví dụ `blue`, `emerald` |
+
+Ví dụ:
+
+| A | B | C | D | E | G | H | I | J | M |
+|---|---|---|---|---|---|---|---|---|---|
+| `mau_form` | `Hướng dẫn` | `video_huong_dan_form` | `Video hướng dẫn đăng ký` | `video` | `https://www.youtube.com/watch?v=VIDEO_ID` | | `1` | `Xem video trước khi điền thông tin.` | `blue` |
+
 ### In đậm, in nghiêng trong nội dung hướng dẫn
 
-Các cột **G** và **J** có thể dùng Markdown nhẹ cho `notice`, `heading`, `reading` và ghi chú dưới trường nhập:
+Các cột **G** và **J** có thể dùng Markdown nhẹ cho `notice`, `heading`, `reading`, `video` và ghi chú dưới trường nhập:
 
 | Muốn hiển thị | Cách ghi |
 |---|---|

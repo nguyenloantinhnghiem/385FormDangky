@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2, RotateCcw, User, Info, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, FileText, Plus, Trash2, RotateCcw, User, Info, AlertTriangle, CheckCircle2, Sparkles, PlayCircle } from 'lucide-react';
 import FileUpload from '@/components/ui/FileUpload';
 import SignaturePad from '@/components/ui/SignaturePad';
 import type { Applicant } from '@/types';
@@ -234,8 +234,12 @@ function isReadingField(field: FormFieldDef): boolean {
     return field.fieldType === 'reading';
 }
 
+function isVideoField(field: FormFieldDef): boolean {
+    return field.fieldType === 'video';
+}
+
 function isPresentationField(field: FormFieldDef): boolean {
-    return field.fieldType === 'notice' || field.fieldType === 'heading' || isReadingField(field);
+    return field.fieldType === 'notice' || field.fieldType === 'heading' || isReadingField(field) || isVideoField(field);
 }
 
 function compareFieldsByOrder(a: FormFieldDef, b: FormFieldDef): number {
@@ -314,6 +318,19 @@ function MarkdownText({ text, className }: { text: string; className?: string })
 
     flushList('list-last');
     return <div className={className}>{blocks}</div>;
+}
+
+function getVideoEmbedUrl(rawUrl: string): string {
+    const url = rawUrl.trim();
+    if (!url) return '';
+
+    const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^&?/]+)/);
+    if (youtubeMatch?.[1]) return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+
+    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vimeoMatch?.[1]) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+
+    return /^https?:\/\//.test(url) ? url : '';
 }
 
 function ReadingGateField({
@@ -758,6 +775,42 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         const content = [field.placeholder, field.helperText].filter(Boolean).join('\n');
         const Icon = toneName === 'rose' ? AlertTriangle : toneName === 'emerald' ? CheckCircle2 : field.fieldType === 'heading' ? Sparkles : Info;
 
+        if (field.fieldType === 'video') {
+            const videoUrl = getVideoEmbedUrl(field.placeholder);
+            return (
+                <div className={`rounded-lg border ${tone.panelStrong} px-3 py-3`}>
+                    <div className="mb-2 flex items-start gap-2.5">
+                        <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${tone.icon}`}>
+                            <PlayCircle className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                            <p className={`text-sm font-semibold ${tone.title}`}>{field.fieldLabel}</p>
+                            {field.helperText && (
+                                <MarkdownText text={field.helperText} className="mt-1 space-y-1 text-sm leading-relaxed text-stone-600" />
+                            )}
+                        </div>
+                    </div>
+                    {videoUrl ? (
+                        <div className="overflow-hidden rounded-lg border border-white/70 bg-black shadow-sm">
+                            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                                <iframe
+                                    src={videoUrl}
+                                    className="absolute inset-0 h-full w-full"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    title={field.fieldLabel || 'Video hướng dẫn'}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="rounded-md bg-white/70 px-3 py-2 text-xs text-rose-600">
+                            Chưa có link video hợp lệ ở cột G.
+                        </p>
+                    )}
+                </div>
+            );
+        }
+
         if (field.fieldType === 'heading') {
             return (
                 <div className={`rounded-lg border ${tone.panelStrong} px-3 py-2.5`}>
@@ -1032,6 +1085,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         switch (field.fieldType) {
             case 'notice':
             case 'heading':
+            case 'video':
                 return renderPresentationField(field);
             case 'reading':
                 return (

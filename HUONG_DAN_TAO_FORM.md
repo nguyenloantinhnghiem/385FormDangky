@@ -69,6 +69,7 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu | Không |
 | `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu | Không |
 | `reading` / `tai_lieu` / `yeu_cau_doc` / `xac_nhan_cam_ket` | Tài liệu/cam kết bắt buộc đọc xong mới hiện trường phía sau | Không |
+| `video` / `video_huong_dan` / `youtube` | Nhúng video hướng dẫn trong form, không ghi dữ liệu | Không |
 | `image` | Tải ảnh | Không |
 | `signature` | Chữ ký | Không |
 
@@ -149,9 +150,23 @@ Ghi chú:
 - Có thể ghi cột **E** là `xac_nhan_cam_ket` nếu muốn gọi rõ đây là phần cam kết.
 - Nếu đặt trong `block` hoặc `group`, trường phía sau trong khối và trường phía sau khối cũng bị khóa cho đến khi xác nhận.
 
-### 5c. In đậm, in nghiêng trong đoạn hướng dẫn
+### 5c. Video hướng dẫn trong form
 
-Có thể ghi Markdown nhẹ trong cột **G** và **J** cho `notice`, `heading`, `reading`, hoặc ghi chú dưới trường nhập.
+Dùng loại trường `video` nếu muốn nhúng video hướng dẫn ở một vị trí cụ thể trong form.
+
+| A | B | C | D | E | G | H | I | J | M |
+|---|---|---|---|---|---|---|---|---|---|
+| mau_form | Hướng dẫn | video_huong_dan_form | Video hướng dẫn đăng ký | **video** | https://www.youtube.com/watch?v=VIDEO_ID | | 1 | Xem video trước khi điền thông tin. | blue |
+
+Ghi chú:
+
+- Cột **G** là link YouTube/Vimeo. Có thể dùng link `youtube.com/watch?v=...`, `youtu.be/...`, `youtube.com/shorts/...`, hoặc link embed.
+- Cột **J** là mô tả dưới tiêu đề video, có thể dùng Markdown.
+- Cột **I** quyết định video nằm trước hay sau trường nào.
+
+### 5d. In đậm, in nghiêng trong đoạn hướng dẫn
+
+Có thể ghi Markdown nhẹ trong cột **G** và **J** cho `notice`, `heading`, `reading`, `video`, hoặc ghi chú dưới trường nhập.
 
 | Muốn hiển thị | Ghi trong Google Sheet |
 |---|---|
@@ -168,7 +183,7 @@ Ví dụ ghi trong cột **J**:
 - *Nếu nhập sai, ban tổ chức có thể không liên hệ được.*
 ```
 
-### 5d. Form có nhóm con (cha-con)
+### 5e. Form có nhóm con (cha-con)
 
 VD: "Đăng ký AVLH" → bấm vào → chọn "Trường hợp 1" hoặc "Trường hợp 2"
 
