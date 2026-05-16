@@ -16,6 +16,10 @@ export interface FormFieldDef {
     separateColumn: boolean;
     showWhen: { fieldKey: string; value: string } | null;
     tone: string;
+    readingConfirmText: string;
+    readingPendingText: string;
+    readingAcceptedText: string;
+    readingPromptText: string;
     sourceIndex?: number;
     // Group support
     groupKey?: string;      // for sub-fields: which group they belong to
@@ -41,6 +45,10 @@ const COLUMN_FALLBACKS = {
     separateColumn: 10,
     showWhen: 11,
     tone: 12,
+    readingConfirmText: 13,
+    readingPendingText: 14,
+    readingAcceptedText: 15,
+    readingPromptText: 16,
 } as const;
 
 const HEADER_ALIASES = {
@@ -57,6 +65,10 @@ const HEADER_ALIASES = {
     separateColumn: ['cot_rieng', 'separate_column'],
     showWhen: ['dieu_kien_hien', 'show_when'],
     tone: ['mau_sac', 'mau', 'mau_hien_thi', 'tone', 'color'],
+    readingConfirmText: ['nut_xac_nhan', 'van_ban_nut_xac_nhan', 'xac_nhan_text', 'confirm_text', 'reading_confirm_text'],
+    readingPendingText: ['nut_khi_chua_cuon_het', 'nut_khi_chua_cuon', 'van_ban_chua_doc_xong', 'chua_doc_xong_text', 'pending_text', 'reading_pending_text'],
+    readingAcceptedText: ['sau_khi_xac_nhan', 'van_ban_da_xac_nhan', 'da_doc_xong', 'da_doc_xong_text', 'accepted_text', 'reading_accepted_text'],
+    readingPromptText: ['mo_ta_yeu_cau_doc', 'huong_dan_doc', 'mo_ta_doc', 'prompt_text', 'reading_prompt_text'],
 } as const;
 
 function normalizeKey(value: string): string {
@@ -197,6 +209,10 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
                         }
                         : null,
                     tone: toneRaw.trim(),
+                    readingConfirmText: getCell(row, headerMap, 'readingConfirmText').trim(),
+                    readingPendingText: getCell(row, headerMap, 'readingPendingText').trim(),
+                    readingAcceptedText: getCell(row, headerMap, 'readingAcceptedText').trim(),
+                    readingPromptText: getCell(row, headerMap, 'readingPromptText').trim(),
                     sourceIndex,
                     groupKey,
                     subFieldKey,

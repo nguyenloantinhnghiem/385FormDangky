@@ -56,7 +56,7 @@ const TABS: TabDef[] = [
     },
     {
         name: 'trường_biểu_mẫu',
-        headers: ['Mã form', 'Nhóm', 'Mã trường', 'Tên trường', 'Loại trường', 'Bắt buộc', 'Gợi ý nhập', 'Các lựa chọn', 'Thứ tự', 'Ghi chú', 'Cột riêng', 'Điều kiện hiện', 'Màu sắc'],
+        headers: ['Mã form', 'Nhóm', 'Mã trường', 'Tên trường', 'Loại trường', 'Bắt buộc', 'Gợi ý nhập', 'Các lựa chọn', 'Thứ tự', 'Ghi chú', 'Cột riêng', 'Điều kiện hiện', 'Màu sắc', 'Nút xác nhận', 'Nút khi chưa cuộn hết', 'Sau khi xác nhận', 'Mô tả đọc'],
         sampleData: [
             ['mau_form', 'Hướng dẫn', 'luu_y_mau', 'Lưu ý trước khi đăng ký', 'notice', 'FALSE', 'Vui lòng đọc kỹ nội dung và điền đúng thông tin.', '', '1', 'Dòng notice chỉ hiển thị để hướng dẫn, không ghi vào kết quả.', 'FALSE', '', 'blue'],
             ['mau_form', 'Thông tin', 'ho_ten', 'Họ tên', 'text', 'TRUE', 'VD: Nguyễn Văn A', '', '2', '', 'TRUE', '', ''],

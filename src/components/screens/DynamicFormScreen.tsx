@@ -332,6 +332,10 @@ function ReadingGateField({
     const tone = TONE_STYLES[toneName];
     const contentRef = useRef<HTMLDivElement>(null);
     const [canAccept, setCanAccept] = useState(!content.trim());
+    const promptText = field.readingPromptText || 'Vui lòng đọc hết nội dung và xác nhận cam kết trước khi điền các mục tiếp theo.';
+    const confirmText = field.readingConfirmText || 'Tôi xác nhận đã đọc xong và cam kết thực hiện';
+    const pendingText = field.readingPendingText || 'Cuộn xuống cuối nội dung để xác nhận';
+    const acceptedText = field.readingAcceptedText || 'Đã đọc xong';
 
     useEffect(() => {
         const checkScrollableContent = () => {
@@ -364,7 +368,7 @@ function ReadingGateField({
                     <div>
                         <p className={`text-base font-semibold ${tone.title}`}>{field.fieldLabel}</p>
                         <p className="mt-1 text-sm leading-relaxed text-stone-600">
-                            Vui lòng đọc hết nội dung và xác nhận cam kết trước khi điền các mục tiếp theo.
+                            {promptText}
                         </p>
                     </div>
                     {content && (
@@ -384,7 +388,7 @@ function ReadingGateField({
                     {accepted ? (
                         <div className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
                             <CheckCircle2 className="h-3.5 w-3.5" />
-                            Đã đọc xong
+                            {acceptedText}
                         </div>
                     ) : (
                         <Button
@@ -395,7 +399,7 @@ function ReadingGateField({
                             onClick={onAccept}
                             className={`min-h-9 whitespace-normal text-left ${tone.label} ${tone.panel}`}
                         >
-                            {canAccept ? 'Tôi xác nhận đã đọc xong và cam kết thực hiện' : 'Cuộn xuống cuối nội dung để xác nhận'}
+                            {canAccept ? confirmText : pendingText}
                         </Button>
                     )}
                     {error && <p className="text-xs font-medium text-red-500">{error}</p>}

@@ -45,6 +45,10 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | **K** | Cột riêng | TRUE = cột riêng trong kết quả | `TRUE` |
 | **L** | Điều kiện hiện | `mã_trường=giá_trị` | `loai=Loại A` |
 | **M** | Màu sắc | Màu cho tên trường, `block`/`group`/`notice`/`heading` | `blue` |
+| **N** | Nút xác nhận | Chữ nút cho `reading` | `Tôi đồng ý` |
+| **O** | Nút khi chưa cuộn hết | Chữ nút khi chưa đọc hết `reading` | `Đọc hết để xác nhận` |
+| **P** | Sau khi xác nhận | Chữ trạng thái đã xác nhận `reading` | `Đã đồng ý` |
+| **Q** | Mô tả đọc | Dòng mô tả nhỏ dưới tiêu đề `reading` | `Vui lòng đọc kỹ.` |
 
 ---
 
@@ -132,15 +136,16 @@ Vị trí của `notice`/`heading` chạy theo cột **I - Thứ tự**:
 
 Dùng loại trường `reading` nếu muốn người đăng ký phải đọc tài liệu/quy định/cam kết trước. Khi chưa bấm **Tôi xác nhận đã đọc xong và cam kết thực hiện**, các trường có thứ tự phía sau sẽ chưa hiện ra.
 
-| A | B | C | D | E | G | H | I | J | M |
-|---|---|---|---|---|---|---|---|---|---|
-| mau_form | Hướng dẫn | quy_dinh_doc_truoc | Quy định trước khi đăng ký | **reading** | Vui lòng đọc kỹ toàn bộ quy định trước khi nhập thông tin. | | 1 | **Cam kết:** thông tin đăng ký là chính xác. | amber |
+| A | B | C | D | E | G | H | I | J | M | N | O | P | Q |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| mau_form | Hướng dẫn | quy_dinh_doc_truoc | Quy định trước khi đăng ký | **reading** | Vui lòng đọc kỹ toàn bộ quy định trước khi nhập thông tin. | | 1 | **Cam kết:** thông tin đăng ký là chính xác. | amber | Tôi đồng ý với quy định này | Đọc hết quy định để xác nhận | Đã đồng ý quy định | Bạn cần xác nhận trước khi điền thông tin. |
 
 Ghi chú:
 
 - Cột **G** là nội dung chính cần đọc.
 - Cột **J** là nội dung bổ sung, có thể xuống dòng và dùng Markdown.
 - Cột **I** càng nhỏ thì tài liệu càng hiện sớm.
+- Cột **N/O/P/Q** dùng để chỉnh chữ giao diện của phần đọc/xác nhận; nếu để trống app dùng câu mặc định.
 - Có thể ghi cột **E** là `xac_nhan_cam_ket` nếu muốn gọi rõ đây là phần cam kết.
 - Nếu đặt trong `block` hoặc `group`, trường phía sau trong khối và trường phía sau khối cũng bị khóa cho đến khi xác nhận.
 

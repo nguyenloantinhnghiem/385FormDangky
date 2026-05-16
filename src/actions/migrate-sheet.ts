@@ -10,7 +10,7 @@
 import { getSheetsClient } from '@/lib/sheets/client';
 
 // Version bumped whenever Sheet structure changes
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 interface TabDef {
     name: string;
@@ -38,7 +38,7 @@ const REQUIRED_TABS: TabDef[] = [
     },
     {
         name: 'trường_biểu_mẫu',
-        headers: ['Mã form', 'Nhóm', 'Mã trường', 'Tên trường', 'Loại trường', 'Bắt buộc', 'Gợi ý nhập', 'Các lựa chọn', 'Thứ tự', 'Ghi chú', 'Cột riêng', 'Điều kiện hiện', 'Màu sắc'],
+        headers: ['Mã form', 'Nhóm', 'Mã trường', 'Tên trường', 'Loại trường', 'Bắt buộc', 'Gợi ý nhập', 'Các lựa chọn', 'Thứ tự', 'Ghi chú', 'Cột riêng', 'Điều kiện hiện', 'Màu sắc', 'Nút xác nhận', 'Nút khi chưa cuộn hết', 'Sau khi xác nhận', 'Mô tả đọc'],
     },
     {
         name: 'đăng_ký',
@@ -138,6 +138,17 @@ export async function runSheetMigration(): Promise<{ migrated: boolean; actions:
                         range: `'${tab.name}'!1:1`,
                     });
                     const existingHeaders = (headerRes.data.values?.[0] || []) as string[];
+
+                    if (tab.name === 'trường_biểu_mẫu') {
+                        await sheets.spreadsheets.values.update({
+                            spreadsheetId,
+                            range: `'${tab.name}'!A1:Q1`,
+                            valueInputOption: 'USER_ENTERED',
+                            requestBody: { values: [tab.headers] },
+                        });
+                        actions.push(`Chuẩn hóa header tab "${tab.name}"`);
+                        continue;
+                    }
 
                     // Find headers that are in the definition but not in the sheet
                     const missingHeaders = tab.headers.filter(h => !existingHeaders.includes(h));

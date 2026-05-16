@@ -193,6 +193,10 @@ npx tsx scripts/setup-new-sheet.ts
 | **K** | Cột riêng trong KQ | `TRUE` |
 | **L** | Điều kiện hiện | `nghiep_chon=X` |
 | **M** | Màu sắc cho tên trường, `block`, `group`, `notice`, `heading` | `blue` |
+| **N** | Chữ nút xác nhận cho `reading` | `Tôi đồng ý tham gia` |
+| **O** | Chữ nút khi chưa cuộn hết `reading` | `Đọc hết nội dung để xác nhận` |
+| **P** | Chữ sau khi đã xác nhận `reading` | `Đã xác nhận cam kết` |
+| **Q** | Mô tả hướng dẫn dưới tiêu đề `reading` | `Vui lòng đọc kỹ phần này.` |
 
 ### Loại trường hỗ trợ:
 
@@ -255,12 +259,16 @@ Dùng loại trường `reading` nếu muốn người đăng ký phải đọc 
 | **J** | Nội dung bổ sung, có thể dùng Markdown |
 | **I** | Thứ tự; các trường có thứ tự phía sau sẽ ẩn cho đến khi đọc và xác nhận xong |
 | **M** | Màu hiển thị, ví dụ `blue`, `amber`, `rose` |
+| **N** | Chữ trên nút xác nhận; bỏ trống sẽ dùng mặc định |
+| **O** | Chữ trên nút khi người đăng ký chưa cuộn hết nội dung |
+| **P** | Chữ trạng thái sau khi đã xác nhận |
+| **Q** | Dòng mô tả nhỏ dưới tiêu đề tài liệu/cam kết |
 
 Ví dụ:
 
-| A | B | C | D | E | G | H | I | J | M |
-|---|---|---|---|---|---|---|---|---|---|
-| `mau_form` | `Hướng dẫn` | `quy_dinh_doc_truoc` | `Quy định trước khi đăng ký` | `reading` | `Vui lòng đọc kỹ quy định trước khi nhập thông tin.` | | `1` | `**Cam kết:** thông tin đăng ký là chính xác.` | `amber` |
+| A | B | C | D | E | G | H | I | J | M | N | O | P | Q |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `mau_form` | `Hướng dẫn` | `quy_dinh_doc_truoc` | `Quy định trước khi đăng ký` | `reading` | `Vui lòng đọc kỹ quy định trước khi nhập thông tin.` | | `1` | `**Cam kết:** thông tin đăng ký là chính xác.` | `amber` | `Tôi đồng ý với quy định này` | `Đọc hết quy định để xác nhận` | `Đã đồng ý quy định` | `Bạn cần xác nhận trước khi điền thông tin.` |
 
 Nếu đặt `reading` trong `block` hoặc `group`, các trường phía sau trong khối đó và các trường phía sau khối cũng sẽ tạm ẩn cho đến khi người đăng ký xác nhận đã đọc.
 
