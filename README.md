@@ -210,6 +210,7 @@ npx tsx scripts/setup-new-sheet.ts
 | `khoi` / `khối` | Tên khác của `block` |
 | `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu |
 | `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu |
+| `reading` / `tai_lieu` / `yeu_cau_doc` | Tài liệu bắt buộc đọc xong mới hiện các trường phía sau |
 | `image` | Tải ảnh |
 | `signature` | Chữ ký |
 
@@ -241,9 +242,29 @@ Ví dụ tạo tiêu đề phụ:
 |---|---|---|---|---|---|---|---|---|
 | `mau_form` | `Nội dung` | `tieu_de_phap_hoi` | `Thông tin tham dự pháp hội` | `heading` | `Các mục bên dưới dùng để ban tổ chức sắp xếp chỗ ngồi.` | | `2` | `emerald` |
 
+### Tài liệu bắt buộc đọc trước khi điền form
+
+Dùng loại trường `reading` nếu muốn người đăng ký phải đọc xong tài liệu/thông tin/quy định rồi mới thấy các trường phía sau. Trường này không ghi dữ liệu vào kết quả.
+
+| Cột | Cách ghi |
+|---|---|
+| **C** | Mã trường, ví dụ `quy_dinh_truoc_khi_dang_ky` |
+| **D** | Tiêu đề tài liệu |
+| **E** | `reading`, `tai_lieu`, `yeu_cau_doc`, `doc_bat_buoc`, `quy_dinh` |
+| **G** | Nội dung chính cần đọc |
+| **J** | Nội dung bổ sung, có thể dùng Markdown |
+| **I** | Thứ tự; các trường có thứ tự phía sau sẽ ẩn cho đến khi đọc xong |
+| **M** | Màu hiển thị, ví dụ `blue`, `amber`, `rose` |
+
+Ví dụ:
+
+| A | B | C | D | E | G | H | I | J | M |
+|---|---|---|---|---|---|---|---|---|---|
+| `mau_form` | `Hướng dẫn` | `quy_dinh_doc_truoc` | `Quy định trước khi đăng ký` | `reading` | `Vui lòng đọc kỹ quy định trước khi nhập thông tin.` | | `1` | `**Cam kết:** thông tin đăng ký là chính xác.` | `amber` |
+
 ### In đậm, in nghiêng trong nội dung hướng dẫn
 
-Các cột **G** và **J** có thể dùng Markdown nhẹ cho `notice`, `heading` và ghi chú dưới trường nhập:
+Các cột **G** và **J** có thể dùng Markdown nhẹ cho `notice`, `heading`, `reading` và ghi chú dưới trường nhập:
 
 | Muốn hiển thị | Cách ghi |
 |---|---|

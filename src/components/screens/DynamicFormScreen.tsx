@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { getFormFields, type FormSection, type FormFieldDef } from '@/actions/form-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -230,8 +230,12 @@ function getOptionalTone(rawTone: string | undefined, seed: string) {
     return rawTone?.trim() ? getTone(rawTone, seed) : null;
 }
 
+function isReadingField(field: FormFieldDef): boolean {
+    return field.fieldType === 'reading';
+}
+
 function isPresentationField(field: FormFieldDef): boolean {
-    return field.fieldType === 'notice' || field.fieldType === 'heading';
+    return field.fieldType === 'notice' || field.fieldType === 'heading' || isReadingField(field);
 }
 
 function compareFieldsByOrder(a: FormFieldDef, b: FormFieldDef): number {
@@ -312,15 +316,103 @@ function MarkdownText({ text, className }: { text: string; className?: string })
     return <div className={className}>{blocks}</div>;
 }
 
+function ReadingGateField({
+    field,
+    accepted,
+    onAccept,
+}: {
+    field: FormFieldDef;
+    accepted: boolean;
+    onAccept: () => void;
+}) {
+    const content = [field.placeholder, field.helperText].filter(Boolean).join('\n');
+    const toneName = getToneName(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`);
+    const tone = TONE_STYLES[toneName];
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [canAccept, setCanAccept] = useState(!content.trim());
+
+    useEffect(() => {
+        const checkScrollableContent = () => {
+            const element = contentRef.current;
+            if (!element || !content.trim()) {
+                setCanAccept(true);
+                return;
+            }
+
+            const hasReachedEnd = element.scrollHeight - element.scrollTop - element.clientHeight <= 12;
+            const isNotScrollable = element.scrollHeight <= element.clientHeight + 12;
+            setCanAccept(hasReachedEnd || isNotScrollable);
+        };
+
+        const frame = window.requestAnimationFrame(checkScrollableContent);
+        window.addEventListener('resize', checkScrollableContent);
+        return () => {
+            window.cancelAnimationFrame(frame);
+            window.removeEventListener('resize', checkScrollableContent);
+        };
+    }, [content]);
+
+    return (
+        <div className={`rounded-lg border ${accepted ? tone.panelStrong : tone.notice} px-3 py-3`}>
+            <div className="flex items-start gap-2.5">
+                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${accepted ? 'bg-emerald-100 text-emerald-700' : tone.icon}`}>
+                    {accepted ? <CheckCircle2 className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                </span>
+                <div className="min-w-0 flex-1 space-y-2">
+                    <div>
+                        <p className={`text-sm font-semibold ${tone.title}`}>{field.fieldLabel}</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-stone-500">
+                            Vui lòng đọc hết nội dung này trước khi điền các mục tiếp theo.
+                        </p>
+                    </div>
+                    {content && (
+                        <div
+                            ref={contentRef}
+                            onScroll={() => {
+                                const element = contentRef.current;
+                                if (!element) return;
+                                setCanAccept(element.scrollHeight - element.scrollTop - element.clientHeight <= 12);
+                            }}
+                            className="max-h-56 overflow-y-auto rounded-md border border-white/70 bg-white/70 px-3 py-2 text-sm leading-relaxed text-stone-700 shadow-inner"
+                        >
+                            <MarkdownText text={content} className="space-y-1.5" />
+                        </div>
+                    )}
+                    {accepted ? (
+                        <div className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Đã đọc xong
+                        </div>
+                    ) : (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={!canAccept}
+                            onClick={onAccept}
+                            className={`h-8 ${tone.label} ${tone.panel}`}
+                        >
+                            {canAccept ? 'Tôi đã đọc xong' : 'Cuộn xuống cuối nội dung để xác nhận'}
+                        </Button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, applicant, isReregistering = false, onEditApplicant, onNext, onBack }: DynamicFormScreenProps) {
     const [sections, setSections] = useState<FormSection[]>([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState<Record<string, unknown>>(defaultValues || {});
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [acceptedReadings, setAcceptedReadings] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         getFormFields(formType).then((s) => {
             setSections(s);
+            setAcceptedReadings({});
+            setErrors({});
             const defaults: Record<string, unknown> = { ...(defaultValues || {}) };
             const historicalDetail = getHistoricalDetail(defaults);
             const hasMappedData = Object.entries(defaults).some(([key, value]) =>
@@ -379,6 +471,15 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         if (errors[key]) setErrors((prev) => {
             const next = { ...prev };
             delete next[key];
+            return next;
+        });
+    };
+
+    const acceptReading = (fieldKey: string) => {
+        setAcceptedReadings((prev) => ({ ...prev, [fieldKey]: true }));
+        if (errors[fieldKey]) setErrors((prev) => {
+            const next = { ...prev };
+            delete next[fieldKey];
             return next;
         });
     };
@@ -474,11 +575,24 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
     // ========== VALIDATION ==========
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {};
+        let blockedByReading = false;
         for (const sec of sections) {
-            for (const f of sec.fields) {
+            if (blockedByReading) break;
+            const fields = sec.fields.filter((f) => !f.groupKey).sort(compareFieldsByOrder);
+            for (const f of fields) {
                 if (f.groupKey) continue; // sub-fields validated within group
-                if (isPresentationField(f)) continue;
                 if (!isFieldVisible(f)) continue;
+
+                if (isReadingField(f)) {
+                    if (!acceptedReadings[f.fieldKey]) {
+                        newErrors[f.fieldKey] = `Vui lòng đọc xong ${f.fieldLabel || 'tài liệu'} trước khi tiếp tục`;
+                        blockedByReading = true;
+                        break;
+                    }
+                    continue;
+                }
+
+                if (isPresentationField(f)) continue;
 
                 if (f.fieldType === 'group') {
                     // Validate group sub-fields
@@ -741,6 +855,17 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         <div className="space-y-3">
                             {subFields.map((sf) => {
                                 if (!isContainerFieldVisible(sf, field.fieldKey, item)) return null;
+                                if (isReadingField(sf)) {
+                                    return (
+                                        <div key={sf.fieldKey}>
+                                            <ReadingGateField
+                                                field={sf}
+                                                accepted={!!acceptedReadings[sf.fieldKey]}
+                                                onAccept={() => acceptReading(sf.fieldKey)}
+                                            />
+                                        </div>
+                                    );
+                                }
                                 if (isPresentationField(sf)) {
                                     return <div key={sf.fieldKey}>{renderPresentationField(sf)}</div>;
                                 }
@@ -798,6 +923,17 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         return (
             <div className={`space-y-3 rounded-lg border border-l-4 p-4 ${tone.panelStrong} ${tone.item}`}>
                 {visibleSubFields.map((sf) => {
+                    if (isReadingField(sf)) {
+                        return (
+                            <div key={sf.fieldKey}>
+                                <ReadingGateField
+                                    field={sf}
+                                    accepted={!!acceptedReadings[sf.fieldKey]}
+                                    onAccept={() => acceptReading(sf.fieldKey)}
+                                />
+                            </div>
+                        );
+                    }
                     if (isPresentationField(sf)) {
                         return <div key={sf.fieldKey}>{renderPresentationField(sf)}</div>;
                     }
@@ -835,6 +971,14 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
             case 'notice':
             case 'heading':
                 return renderPresentationField(field);
+            case 'reading':
+                return (
+                    <ReadingGateField
+                        field={field}
+                        accepted={!!acceptedReadings[field.fieldKey]}
+                        onAccept={() => acceptReading(field.fieldKey)}
+                    />
+                );
             case 'group':
                 return renderGroup(field);
             case 'block':
@@ -949,6 +1093,40 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         }
     };
 
+    const getSectionVisibleFields = (section: FormSection): FormFieldDef[] => {
+        return section.fields
+            .filter((f) => !f.groupKey && isFieldVisible(f))
+            .filter((f) => {
+                if (f.fieldType !== 'block') return true;
+                const blockData = getBlockData(f.fieldKey);
+                return getContainerSubFields(f.fieldKey).some((sf) =>
+                    isContainerFieldVisible(sf, f.fieldKey, blockData)
+                );
+            })
+            .sort(compareFieldsByOrder);
+    };
+
+    const getDisplaySections = (): FormSection[] => {
+        let blockedByReading = false;
+
+        return sections
+            .map((section) => {
+                if (blockedByReading) return { name: section.name, fields: [] };
+
+                const fields: FormFieldDef[] = [];
+                for (const field of getSectionVisibleFields(section)) {
+                    fields.push(field);
+                    if (isReadingField(field) && !acceptedReadings[field.fieldKey]) {
+                        blockedByReading = true;
+                        break;
+                    }
+                }
+
+                return { name: section.name, fields };
+            })
+            .filter((section) => section.fields.length > 0);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-16">
@@ -1059,19 +1237,9 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
             )}
 
             <div className="space-y-4">
-                {sections.map((section, sectionIndex) => {
+                {getDisplaySections().map((section, sectionIndex) => {
                     const sectionTone = getTone('', `${section.name}_${sectionIndex}`);
-                    // Filter: show top-level fields that are visible, skip sub-fields (rendered by group)
-                    const visibleFields = section.fields
-                        .filter((f) => !f.groupKey && isFieldVisible(f))
-                        .filter((f) => {
-                            if (f.fieldType !== 'block') return true;
-                            const blockData = getBlockData(f.fieldKey);
-                            return getContainerSubFields(f.fieldKey).some((sf) =>
-                                isContainerFieldVisible(sf, f.fieldKey, blockData)
-                            );
-                        })
-                        .sort(compareFieldsByOrder);
+                    const visibleFields = section.fields;
                     if (visibleFields.length === 0) return null;
                     return (
                         <Card key={section.name} className={`overflow-hidden ${sectionTone.card}`}>

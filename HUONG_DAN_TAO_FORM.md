@@ -64,6 +64,7 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | `khoi` / `khối` | Tên khác của `block` | Không |
 | `notice` / `info` / `luu_y` | Hộp thông tin/nhấn mạnh, không ghi dữ liệu | Không |
 | `heading` / `title` / `tieu_de` | Tiêu đề phụ có màu, không ghi dữ liệu | Không |
+| `reading` / `tai_lieu` / `yeu_cau_doc` | Tài liệu bắt buộc đọc xong mới hiện trường phía sau | Không |
 | `image` | Tải ảnh | Không |
 | `signature` | Chữ ký | Không |
 
@@ -127,9 +128,23 @@ Vị trí của `notice`/`heading` chạy theo cột **I - Thứ tự**:
 |---|---|---|---|---|---|---|---|---|
 | mau_form | Nội dung | tieu_de_phap_hoi | Thông tin tham dự pháp hội | **heading** | Các mục bên dưới dùng để ban tổ chức sắp xếp chỗ ngồi. | | 2 | emerald |
 
-### 5b. In đậm, in nghiêng trong đoạn hướng dẫn
+### 5b. Tài liệu bắt buộc đọc trước khi điền form
 
-Có thể ghi Markdown nhẹ trong cột **G** và **J** cho `notice`, `heading`, hoặc ghi chú dưới trường nhập.
+Dùng loại trường `reading` nếu muốn người đăng ký phải đọc tài liệu/quy định/cam kết trước. Khi chưa bấm **Tôi đã đọc xong**, các trường có thứ tự phía sau sẽ chưa hiện ra.
+
+| A | B | C | D | E | G | H | I | J | M |
+|---|---|---|---|---|---|---|---|---|---|
+| mau_form | Hướng dẫn | quy_dinh_doc_truoc | Quy định trước khi đăng ký | **reading** | Vui lòng đọc kỹ toàn bộ quy định trước khi nhập thông tin. | | 1 | **Cam kết:** thông tin đăng ký là chính xác. | amber |
+
+Ghi chú:
+
+- Cột **G** là nội dung chính cần đọc.
+- Cột **J** là nội dung bổ sung, có thể xuống dòng và dùng Markdown.
+- Cột **I** càng nhỏ thì tài liệu càng hiện sớm.
+
+### 5c. In đậm, in nghiêng trong đoạn hướng dẫn
+
+Có thể ghi Markdown nhẹ trong cột **G** và **J** cho `notice`, `heading`, `reading`, hoặc ghi chú dưới trường nhập.
 
 | Muốn hiển thị | Ghi trong Google Sheet |
 |---|---|
@@ -146,7 +161,7 @@ Ví dụ ghi trong cột **J**:
 - *Nếu nhập sai, ban tổ chức có thể không liên hệ được.*
 ```
 
-### 5c. Form có nhóm con (cha-con)
+### 5d. Form có nhóm con (cha-con)
 
 VD: "Đăng ký AVLH" → bấm vào → chọn "Trường hợp 1" hoặc "Trường hợp 2"
 
