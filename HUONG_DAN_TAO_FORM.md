@@ -44,7 +44,7 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 | **J** | Ghi chú | Text nhỏ dưới input | `Ghi theo CCCD` |
 | **K** | Cột riêng | TRUE = cột riêng trong kết quả | `TRUE` |
 | **L** | Điều kiện hiện | `mã_trường=giá_trị` | `loai=Loại A` |
-| **M** | Màu sắc | Màu cho `block`/`group`/`notice`/`heading` | `blue` |
+| **M** | Màu sắc | Màu cho tên trường, `block`/`group`/`notice`/`heading` | `blue` |
 
 ---
 
@@ -98,7 +98,7 @@ Mở tab **`trường_biểu_mẫu`** → thêm các dòng, mỗi dòng = 1 trư
 
 ### 5a. Màu sắc, tiêu đề phụ và hộp nhấn mạnh
 
-Hệ thống tự tô màu cho từng nhóm form. Nếu muốn tự chọn màu, điền cột **M** với các giá trị. Cột **H** vẫn là cột **Các lựa chọn** hoặc mã nhóm cha.
+Hệ thống tự tô màu cho từng nhóm form. Nếu muốn tự chọn màu tên trường hoặc khung nhấn mạnh, điền cột **M** với các giá trị. Cột **H** vẫn là cột **Các lựa chọn** hoặc mã nhóm cha.
 
 Vị trí của `notice`/`heading` chạy theo cột **I - Thứ tự**:
 

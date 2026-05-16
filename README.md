@@ -192,7 +192,7 @@ npx tsx scripts/setup-new-sheet.ts
 | **J** | Ghi chú | `Theo âm lịch` |
 | **K** | Cột riêng trong KQ | `TRUE` |
 | **L** | Điều kiện hiện | `nghiep_chon=X` |
-| **M** | Màu sắc cho `block`/`group`/`notice`/`heading` | `blue` |
+| **M** | Màu sắc cho tên trường, `block`, `group`, `notice`, `heading` | `blue` |
 
 ### Loại trường hỗ trợ:
 
@@ -215,7 +215,7 @@ npx tsx scripts/setup-new-sheet.ts
 
 ### Màu sắc và hộp thông tin
 
-Với dòng `block`, `group`, `notice`, `heading`, cột **M** có thể điền màu. Cột **H** vẫn giữ đúng vai trò là **Các lựa chọn** hoặc mã nhóm cha.
+Cột **M** có thể điền màu cho tên trường của mọi loại field. Với `block`, `group`, `notice`, `heading`, màu này cũng dùng cho khung/tiêu đề nhấn mạnh. Cột **H** vẫn giữ đúng vai trò là **Các lựa chọn** hoặc mã nhóm cha.
 
 Vị trí hiển thị luôn theo cột **I - Thứ tự**. Nếu muốn `notice`/`heading` hiện ở đầu toàn bộ section, để cột **H** trống và mã trường ở cột **C** là mã độc lập, ví dụ `luu_y_dau_form`. Nếu muốn `notice`/`heading` nằm bên trong một `block`/`group`, cột **C** có thể ghi dạng `ma_block.luu_y` hoặc cột **H** ghi mã `block/group` cha; khi đó thứ tự được tính trong chính khối đó.
 

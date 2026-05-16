@@ -174,7 +174,6 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
                 // Options: only parse as options if NOT used as container reference
                 const isContainerRef = groupKey && !isSubFieldDot;
                 const supportsOptions = fieldType === 'select' || fieldType === 'radio' || fieldType === 'multichoice';
-                const supportsTone = fieldType === 'group' || fieldType === 'block' || fieldType === 'notice' || fieldType === 'heading';
                 const options = (supportsOptions && !isContainerRef && optionsRaw) ? optionsRaw.split('|').map((o) => o.trim()) : [];
 
                 return {
@@ -195,7 +194,7 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
                             value: getCell(row, headerMap, 'showWhen').split('=').slice(1).join('=').trim(),
                         }
                         : null,
-                    tone: supportsTone && !isContainerRef ? toneRaw.trim() : '',
+                    tone: toneRaw.trim(),
                     sourceIndex,
                     groupKey,
                     subFieldKey,

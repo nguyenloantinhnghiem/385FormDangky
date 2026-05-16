@@ -226,6 +226,10 @@ function getTone(rawTone: string | undefined, seed: string) {
     return TONE_STYLES[getToneName(rawTone, seed)];
 }
 
+function getOptionalTone(rawTone: string | undefined, seed: string) {
+    return rawTone?.trim() ? getTone(rawTone, seed) : null;
+}
+
 function isPresentationField(field: FormFieldDef): boolean {
     return field.fieldType === 'notice' || field.fieldType === 'heading';
 }
@@ -740,10 +744,11 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                 if (isPresentationField(sf)) {
                                     return <div key={sf.fieldKey}>{renderPresentationField(sf)}</div>;
                                 }
+                                const subFieldTone = getOptionalTone(sf.tone, `${sf.section}_${sf.fieldKey}_${sf.fieldLabel}`) || tone;
                                 const errKey = `${field.fieldKey}.${index}.${sf.subFieldKey}`;
                                 return (
                                     <div key={sf.subFieldKey} className="space-y-1">
-                                        <Label className="text-sm font-medium text-stone-700">
+                                        <Label className={`text-sm font-medium ${subFieldTone.label}`}>
                                             {sf.fieldLabel}
                                             {sf.required && <span className="text-red-500 ml-1">*</span>}
                                         </Label>
@@ -796,10 +801,11 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                     if (isPresentationField(sf)) {
                         return <div key={sf.fieldKey}>{renderPresentationField(sf)}</div>;
                     }
+                    const subFieldTone = getOptionalTone(sf.tone, `${sf.section}_${sf.fieldKey}_${sf.fieldLabel}`) || tone;
                     const errKey = `${field.fieldKey}.${sf.subFieldKey}`;
                     return (
                         <div key={sf.subFieldKey} className="space-y-1">
-                            <Label className="text-sm font-medium text-stone-700">
+                            <Label className={`text-sm font-medium ${subFieldTone.label}`}>
                                 {sf.fieldLabel}
                                 {sf.required && <span className="text-red-500 ml-1">*</span>}
                             </Label>
@@ -868,7 +874,8 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         ))}
                     </select>
                 );
-            case 'checkbox':
+            case 'checkbox': {
+                const checkboxTone = getOptionalTone(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`);
                 return (
                     <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -877,9 +884,10 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                             onChange={(e) => handleChange(field.fieldKey, e.target.checked)}
                             className="w-4 h-4 rounded border-stone-300"
                         />
-                        <span className="text-sm text-stone-700">{field.fieldLabel}</span>
+                        <span className={`text-sm ${checkboxTone?.label || 'text-stone-700'}`}>{field.fieldLabel}</span>
                     </label>
                 );
+            }
             case 'multichoice': {
                 const selectedList = (Array.isArray(value) ? value : []) as string[];
                 return (
@@ -1077,11 +1085,11 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                                 {visibleFields.map((field) => {
                                     const fieldTone = field.fieldType === 'group' || field.fieldType === 'block'
                                         ? getTone(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`)
-                                        : sectionTone;
+                                        : getOptionalTone(field.tone, `${field.section}_${field.fieldKey}_${field.fieldLabel}`) || sectionTone;
                                     return (
                                         <div key={field.fieldKey} className="space-y-1.5">
                                             {!isPresentationField(field) && field.fieldType !== 'checkbox' && field.fieldType !== 'group' && field.fieldType !== 'block' && (
-                                                <Label htmlFor={field.fieldKey} className="inline-flex items-center gap-2 font-medium text-stone-700">
+                                                <Label htmlFor={field.fieldKey} className={`inline-flex items-center gap-2 font-medium ${fieldTone.label}`}>
                                                     <span className={`h-2 w-2 rounded-full ${fieldTone.accent}`} />
                                                     {field.fieldLabel}
                                                     {field.required && <span className="text-red-500">*</span>}
