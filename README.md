@@ -63,12 +63,14 @@ Bạn vẫn có thể đồng bộ bằng workflow có sẵn trong repo:
 1. Mở repo của bạn trên GitHub
 2. Vào tab **Actions**
 3. Nếu GitHub hỏi, nhấn **I understand my workflows, go ahead and enable them**
-4. Chọn workflow **Đồng bộ từ repo gốc**
+4. Chọn workflow **Tự động cập nhật từ bản gốc**
 5. Nhấn **Run workflow** → giữ `target_branch` là `main` → **Run workflow**
 
 Nếu workflow báo lỗi quyền push, vào **Settings** → **Actions** → **General** → **Workflow permissions**, chọn **Read and write permissions**, lưu lại rồi chạy workflow lần nữa.
 
-Nếu repo của bạn chưa có workflow **Đồng bộ từ repo gốc**, hãy dùng phần dòng lệnh bên dưới để sync một lần. Sau lần sync đó, workflow sẽ xuất hiện trong tab **Actions** cho các lần cập nhật sau.
+Nếu workflow báo lỗi kiểu `refusing to allow a GitHub App to create or update workflow .github/workflows/... without workflows permission`, nghĩa là bản cập nhật từ repo gốc có thay đổi file workflow. Workflow mới sẽ tự bỏ qua thay đổi trong `.github/workflows` khi dùng token mặc định để các file code vẫn sync được. Nếu muốn đồng bộ cả workflow, chủ repo fork/copy cần tạo **Personal access token** có quyền `repo` và `workflow`, lưu vào **Settings** → **Secrets and variables** → **Actions** với tên `SYNC_TOKEN`, rồi chạy workflow lại.
+
+Nếu repo của bạn chưa có workflow **Tự động cập nhật từ bản gốc**, hãy dùng phần dòng lệnh bên dưới để sync một lần. Sau lần sync đó, workflow sẽ xuất hiện trong tab **Actions** cho các lần cập nhật sau.
 
 **Nếu GitHub báo conflict hoặc muốn dùng dòng lệnh:**
 ```bash

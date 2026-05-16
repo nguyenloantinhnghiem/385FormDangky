@@ -1,7 +1,7 @@
-# Đồng bộ fork với repo gốc khi GitHub không hiện nút "Sync fork".
-# Cách dùng trong repo fork: Actions -> "Đồng bộ từ repo gốc" -> Run workflow.
+# Đồng bộ fork/copy repo với repo gốc khi GitHub không hiện nút "Sync fork".
+# Cách dùng trong repo fork: Actions -> "Tự động cập nhật từ bản gốc" -> Run workflow.
 
-name: Đồng bộ từ repo gốc
+name: Tự động cập nhật từ bản gốc
 
 on:
   workflow_dispatch:
@@ -14,6 +14,8 @@ on:
         description: "Branch của repo gốc cần lấy về"
         required: true
         default: "main"
+  schedule:
+    - cron: "35 5 * * *"
 
 permissions:
   contents: write
@@ -22,21 +24,25 @@ jobs:
   sync:
     name: Merge upstream vào fork
     runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.event.inputs.target_branch || github.event.repository.default_branch }}
+      UPSTREAM_BRANCH: ${{ github.event.inputs.upstream_branch || 'main' }}
+      HAS_SYNC_TOKEN: ${{ secrets.SYNC_TOKEN != '' }}
 
     steps:
       - name: Checkout target branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.target_branch }}
+          ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.SYNC_TOKEN || github.token }}
 
       - name: Fetch upstream
         run: |
           set -euo pipefail
           git remote remove upstream 2>/dev/null || true
           git remote add upstream https://github.com/Hoanq1003/FormDangky.git
-          git fetch upstream "${{ inputs.upstream_branch }}"
+          git fetch upstream "$UPSTREAM_BRANCH"
 
       - name: Merge và push
         run: |
@@ -50,14 +56,24 @@ jobs:
             exit 0
           fi
 
-          if git merge --ff-only FETCH_HEAD; then
-            echo "Đã cập nhật bằng fast-forward."
-          elif git merge --no-edit --allow-unrelated-histories FETCH_HEAD; then
-            echo "Đã cập nhật bằng merge commit."
-          else
+          if ! git merge --no-ff --no-commit --allow-unrelated-histories FETCH_HEAD; then
             git merge --abort || true
             echo "::error::Không thể tự đồng bộ vì có conflict. Hãy sync bằng máy cá nhân hoặc tạo PR để xử lý conflict."
             exit 1
           fi
 
-          git push origin "HEAD:${{ inputs.target_branch }}"
+          if [ "$HAS_SYNC_TOKEN" != "true" ] && git diff --name-only --cached | grep -q '^.github/workflows/'; then
+            echo "::warning::Bỏ qua thay đổi trong .github/workflows vì GITHUB_TOKEN không có quyền cập nhật workflow. Nếu muốn đồng bộ cả workflow, tạo secret SYNC_TOKEN bằng PAT có quyền repo + workflow."
+            git restore --staged -- .github/workflows || true
+            git restore --source=HEAD -- .github/workflows || true
+          fi
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            git commit --allow-empty -m "chore: mark upstream sync"
+          else
+            git commit -m "chore: sync from upstream"
+          fi
+
+          git push origin "HEAD:$TARGET_BRANCH"
