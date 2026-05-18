@@ -342,6 +342,10 @@ function getVideoEmbedUrl(rawUrl: string): string {
     return /^https?:\/\//.test(url) ? url : '';
 }
 
+function getReadingFieldTitle(field: FormFieldDef): string {
+    return field.fieldLabel.trim() || 'Xác nhận cam kết';
+}
+
 function ReadingGateField({
     field,
     accepted,
@@ -358,6 +362,7 @@ function ReadingGateField({
     const tone = TONE_STYLES[toneName];
     const contentRef = useRef<HTMLDivElement>(null);
     const [canAccept, setCanAccept] = useState(!content.trim());
+    const fieldTitle = getReadingFieldTitle(field);
     const promptText = field.readingPromptText || 'Vui lòng đọc hết nội dung và xác nhận cam kết trước khi điền các mục tiếp theo.';
     const confirmText = field.readingConfirmText || 'Tôi xác nhận đã đọc xong và cam kết thực hiện';
     const pendingText = field.readingPendingText || 'Cuộn xuống cuối nội dung để xác nhận';
@@ -392,7 +397,7 @@ function ReadingGateField({
                         {accepted ? <CheckCircle2 className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                     </span>
                     <div className="min-w-0 flex-1">
-                        <p className={`text-base font-semibold ${tone.title}`}>{field.fieldLabel}</p>
+                        <p className={`text-base font-semibold ${tone.title}`}>{fieldTitle}</p>
                         <p className="mt-1 text-sm leading-relaxed text-stone-600">
                             {promptText}
                         </p>
@@ -662,7 +667,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
 
                 if (isReadingField(f)) {
                     if (!acceptedReadings[f.fieldKey]) {
-                        newErrors[f.fieldKey] = `Vui lòng đọc xong ${f.fieldLabel || 'tài liệu'} trước khi tiếp tục`;
+                        newErrors[f.fieldKey] = `Vui lòng đọc xong ${getReadingFieldTitle(f)} trước khi tiếp tục`;
                         blockedByReading = true;
                         break;
                     }
@@ -681,7 +686,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                             if (!isContainerFieldVisible(sf, f.fieldKey, items[i])) continue;
                             if (isReadingField(sf)) {
                                 if (!acceptedReadings[sf.fieldKey]) {
-                                    newErrors[sf.fieldKey] = `Vui lòng đọc xong ${sf.fieldLabel || 'tài liệu'} trước khi tiếp tục`;
+                                    newErrors[sf.fieldKey] = `Vui lòng đọc xong ${getReadingFieldTitle(sf)} trước khi tiếp tục`;
                                     groupBlockedByReading = true;
                                     break;
                                 }
@@ -714,7 +719,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                         if (!sf.subFieldKey || !isContainerFieldVisible(sf, f.fieldKey, blockData)) continue;
                         if (isReadingField(sf)) {
                             if (!acceptedReadings[sf.fieldKey]) {
-                                newErrors[sf.fieldKey] = `Vui lòng đọc xong ${sf.fieldLabel || 'tài liệu'} trước khi tiếp tục`;
+                                newErrors[sf.fieldKey] = `Vui lòng đọc xong ${getReadingFieldTitle(sf)} trước khi tiếp tục`;
                                 blockBlockedByReading = true;
                                 break;
                             }
