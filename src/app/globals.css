@@ -63,11 +63,9 @@ body {
 
 @keyframes confirm-attention {
   0%, 100% {
-    transform: translateY(0);
     box-shadow: 0 10px 24px rgba(16, 185, 129, 0.22);
   }
   50% {
-    transform: translateY(-2px);
     box-shadow: 0 16px 34px rgba(16, 185, 129, 0.34), 0 0 0 5px rgba(16, 185, 129, 0.12);
   }
 }
