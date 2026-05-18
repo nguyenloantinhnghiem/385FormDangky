@@ -74,14 +74,23 @@ function getHistoricalDetail(values: Record<string, unknown>): string {
 
 function getApplicantDefault(field: FormFieldDef, applicant?: Applicant | null): string | undefined {
     if (!applicant) return undefined;
+    if (!['text', 'textarea', 'number', 'select'].includes(field.fieldType)) return undefined;
 
     const key = normalizeKey(field.fieldKey);
     const label = normalizeKey(field.fieldLabel);
-    const haystack = `${key} ${label}`;
 
-    const nameSignals = [
-        'tin_chu', 'phat_tu', 'phap_danh', 'ho_ten', 'ho_va_ten',
-        'nguoi_dang_ky', 'ten_nguoi_dang_ky', 'applicant_name',
+    const keyMatches = (signals: string[]) => signals.some((signal) =>
+        key === signal || key === `ma_${signal}` || key.endsWith(`_${signal}`)
+    );
+    const labelMatches = (signals: string[]) => signals.some((signal) => label.includes(signal));
+
+    const nameKeySignals = [
+        'tin_chu', 'ten_tin_chu', 'phat_tu', 'ten_phat_tu', 'phap_danh',
+        'ho_ten', 'ho_va_ten', 'nguoi_dang_ky', 'ten_nguoi_dang_ky', 'applicant_name',
+    ];
+    const nameLabelSignals = [
+        'ten_tin_chu', 'ten_phat_tu', 'phap_danh', 'ho_ten', 'ho_va_ten',
+        'nguoi_dang_ky', 'ten_nguoi_dang_ky',
     ];
     const phoneSignals = [
         'sdt', 'so_dien_thoai', 'dien_thoai', 'phone', 'applicant_phone',
@@ -90,9 +99,9 @@ function getApplicantDefault(field: FormFieldDef, applicant?: Applicant | null):
         'thuoc_to', 'to_nhom', 'to_dang_ky', 'to_nao', 'applicant_to',
     ];
 
-    if (nameSignals.some((signal) => haystack.includes(signal))) return applicant.tinChu || undefined;
-    if (phoneSignals.some((signal) => haystack.includes(signal))) return applicant.phone || undefined;
-    if (groupSignals.some((signal) => haystack.includes(signal))) return applicant.to || undefined;
+    if (keyMatches(nameKeySignals) || labelMatches(nameLabelSignals)) return applicant.tinChu || undefined;
+    if (keyMatches(phoneSignals) || labelMatches(phoneSignals)) return applicant.phone || undefined;
+    if (keyMatches(groupSignals) || labelMatches(groupSignals)) return applicant.to || undefined;
     return undefined;
 }
 

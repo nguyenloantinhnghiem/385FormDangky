@@ -273,7 +273,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
                 icon: row[3] || '📋',
                 open: (row[4] || 'TRUE').toUpperCase() === 'TRUE',
                 order: parseInt(row[5] || '99', 10),
-                formType: row[6] || 'custom',
+                formType: row[6] || row[0] || 'custom',
                 parent: row[7] || '',
                 videoUrl: row[8] || '',
             }))
