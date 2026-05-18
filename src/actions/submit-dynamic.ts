@@ -175,19 +175,19 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
             for (const sec of sections) {
                 for (const f of sec.fields) {
                     if (f.groupKey && f.subFieldKey) {
-                        // Sub-field: register both as groupKey.subFieldKey and standalone
+                        // Sub-field: keep the sheet's "Cột riêng" setting for fields inside group/block.
                         fieldConfigs[`${f.groupKey}.${f.subFieldKey}`] = {
                             label: f.fieldLabel,
-                            separateColumn: false,
+                            separateColumn: f.separateColumn,
                         };
                         fieldConfigs[f.subFieldKey] = {
                             label: f.fieldLabel,
-                            separateColumn: false,
+                            separateColumn: f.separateColumn,
                         };
                     } else {
                         fieldConfigs[f.fieldKey] = {
                             label: f.fieldLabel,
-                            separateColumn: f.separateColumn,
+                            separateColumn: f.fieldType === 'group' || f.fieldType === 'block' ? false : f.separateColumn,
                         };
                     }
                 }

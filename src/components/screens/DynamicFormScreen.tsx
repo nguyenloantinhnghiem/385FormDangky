@@ -458,13 +458,18 @@ function ReadingGateField({
 export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, applicant, isReregistering = false, onEditApplicant, onNext, onBack }: DynamicFormScreenProps) {
     const [sections, setSections] = useState<FormSection[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadedFormType, setLoadedFormType] = useState('');
     const [formData, setFormData] = useState<Record<string, unknown>>(defaultValues || {});
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [acceptedReadings, setAcceptedReadings] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
+        let active = true;
+
         getFormFields(formType).then((s) => {
+            if (!active) return;
             setSections(s);
+            setLoadedFormType(formType);
             setAcceptedReadings({});
             setErrors({});
             const defaults: Record<string, unknown> = { ...(defaultValues || {}) };
@@ -517,7 +522,18 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
                 }
             }
             setFormData(defaults);
-        }).finally(() => setLoading(false));
+        }).catch((error) => {
+            if (!active) return;
+            console.error('getFormFields client error:', error);
+            setSections([]);
+            setLoadedFormType(formType);
+        }).finally(() => {
+            if (active) setLoading(false);
+        });
+
+        return () => {
+            active = false;
+        };
     }, [formType, defaultValues, applicant]);
 
     const handleChange = (key: string, value: unknown) => {
@@ -1279,7 +1295,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
             .filter((section) => section.fields.length > 0);
     };
 
-    if (loading) {
+    if (loading || loadedFormType !== formType) {
         return (
             <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-6 h-6 animate-spin text-amber-500" />

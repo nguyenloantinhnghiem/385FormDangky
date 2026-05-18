@@ -1,5 +1,6 @@
 'use server';
 
+import { unstable_noStore as noStore } from 'next/cache';
 import { readSettings } from '@/lib/sheets/helpers';
 import { getSheetsClient } from '@/lib/sheets/client';
 
@@ -181,6 +182,7 @@ export interface LandingConfig {
 }
 
 export async function getLandingConfig(): Promise<LandingConfig> {
+    noStore();
     try {
         const settings = await readSettings();
         const notesRaw = settings['landing_notes'] || '';
@@ -244,6 +246,7 @@ export interface RegistrationType {
 }
 
 export async function getRegistrationTypes(): Promise<RegistrationType[]> {
+    noStore();
     try {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
@@ -267,15 +270,15 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
 
         return rows.slice(1)
             .map((row) => ({
-                key: row[0] || '',
-                label: row[1] || '',
+                key: (row[0] || '').trim(),
+                label: (row[1] || '').trim(),
                 description: row[2] || '',
                 icon: row[3] || '📋',
                 open: (row[4] || 'TRUE').toUpperCase() === 'TRUE',
                 order: parseInt(row[5] || '99', 10),
-                formType: row[6] || row[0] || 'custom',
-                parent: row[7] || '',
-                videoUrl: row[8] || '',
+                formType: (row[6] || row[0] || 'custom').trim(),
+                parent: (row[7] || '').trim(),
+                videoUrl: (row[8] || '').trim(),
             }))
             .filter((r) => r.key && r.label)
             .sort((a, b) => a.order - b.order);

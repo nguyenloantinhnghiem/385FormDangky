@@ -161,19 +161,88 @@ export async function appendToFormSheet(
     const { sheets, spreadsheetId } = await getSheetsClient();
     const tabName = `KQ_${sheetLabel}`.slice(0, 50);
 
-    // Split into separate-column fields and grouped fields
-    const allKeys = Object.keys(formData).filter(
-        (k) => formData[k] !== undefined && formData[k] !== null
-    );
-    const separateKeys = allKeys.filter((k) => fieldConfigs[k]?.separateColumn);
-    const groupedKeys = allKeys.filter((k) => !fieldConfigs[k]?.separateColumn);
+    const hasValue = (v: unknown): boolean => {
+        if (v === undefined || v === null || v === false || v === '') return false;
+        if (Array.isArray(v)) return v.some(hasValue);
+        if (typeof v === 'object') return Object.values(v).some(hasValue);
+        return true;
+    };
 
-    // Build label→key map for separate columns
-    const labelToKey = new Map<string, string>();
-    for (const k of separateKeys) {
-        const label = fieldConfigs[k]?.label || k;
-        labelToKey.set(label, k);
+    const getNestedValue = (value: unknown, subKey: string): unknown => {
+        if (Array.isArray(value)) {
+            return value
+                .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null && !Array.isArray(item))
+                .map((item) => item[subKey])
+                .filter(hasValue);
+        }
+        if (typeof value === 'object' && value !== null) {
+            return (value as Record<string, unknown>)[subKey];
+        }
+        return undefined;
+    };
+
+    const valuesByKey = new Map<string, unknown>();
+    for (const [key, value] of Object.entries(formData)) {
+        if (hasValue(value)) valuesByKey.set(key, value);
+
+        if (typeof value !== 'object' || value === null) continue;
+        const subKeys = new Set<string>();
+        if (Array.isArray(value)) {
+            value.forEach((item) => {
+                if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+                    Object.keys(item).forEach((subKey) => subKeys.add(subKey));
+                }
+            });
+        } else {
+            Object.keys(value as Record<string, unknown>).forEach((subKey) => subKeys.add(subKey));
+        }
+
+        for (const subKey of subKeys) {
+            const configKey = `${key}.${subKey}`;
+            if (!fieldConfigs[configKey]?.separateColumn) continue;
+            const nestedValue = getNestedValue(value, subKey);
+            if (hasValue(nestedValue)) valuesByKey.set(configKey, nestedValue);
+        }
     }
+
+    // Split into separate-column fields and grouped fields.
+    // Nested group/block fields can also become separate columns when the sheet marks them TRUE.
+    const allKeys = Array.from(valuesByKey.keys());
+    const separateKeys = allKeys.filter((k) => fieldConfigs[k]?.separateColumn);
+    const groupedKeys = Object.keys(formData).filter((key) => {
+        const value = formData[key];
+        if (!hasValue(value) || fieldConfigs[key]?.separateColumn) return false;
+
+        if (Array.isArray(value) && value.some((item) => typeof item === 'object' && item !== null && !Array.isArray(item))) {
+            return value.some((item) =>
+                typeof item === 'object'
+                && item !== null
+                && !Array.isArray(item)
+                && Object.entries(item).some(([subKey, subValue]) =>
+                    !fieldConfigs[`${key}.${subKey}`]?.separateColumn && hasValue(subValue)
+                )
+            );
+        }
+
+        if (typeof value === 'object' && value !== null) {
+            return Object.entries(value as Record<string, unknown>).some(([subKey, subValue]) =>
+                !fieldConfigs[`${key}.${subKey}`]?.separateColumn && hasValue(subValue)
+            );
+        }
+
+        return true;
+    });
+
+    const columnLetter = (index: number): string => {
+        let n = index + 1;
+        let result = '';
+        while (n > 0) {
+            const mod = (n - 1) % 26;
+            result = String.fromCharCode(65 + mod) + result;
+            n = Math.floor((n - mod) / 26);
+        }
+        return result;
+    };
 
     // Check if tab exists
     let tabExists = false;
@@ -229,7 +298,7 @@ export async function appendToFormSheet(
         if (newLabels.length > 0 || needChiTiet) {
             const toAdd = [...newLabels];
             if (needChiTiet) toAdd.push('Chi tiết');
-            const startCol = String.fromCharCode(65 + existingHeaders.length);
+            const startCol = columnLetter(existingHeaders.length);
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: `'${tabName}'!${startCol}1`,
@@ -303,7 +372,7 @@ export async function appendToFormSheet(
         const label = fieldConfigs[k]?.label || k;
         const colIdx = existingHeaders.indexOf(label);
         if (colIdx >= 0) {
-            row[colIdx] = fmt(formData[k], k);
+            row[colIdx] = fmt(valuesByKey.get(k), k);
         }
     }
 
@@ -327,21 +396,28 @@ export async function appendToFormSheet(
                     const itemLines = items.map((item, idx) => {
                         const parts = Object.entries(item)
                             .filter(([, sv]) => sv !== undefined && sv !== null && sv !== '')
+                            .filter(([sk]) => !fieldConfigs[`${k}.${sk}`]?.separateColumn)
                             .map(([sk, sv]) => {
                                 const subLabel = fieldConfigs[`${k}.${sk}`]?.label || fieldConfigs[sk]?.label || sk;
                                 return `${subLabel}: ${Array.isArray(sv) ? (sv as string[]).join(', ') : String(sv)}`;
                             });
                         return `  ${idx + 1}. ${parts.join(' — ')}`;
-                    });
+                    }).filter((line) => !line.endsWith('. '));
                     return `${label}:\n${itemLines.join('\n')}`;
                 }
 
                 if (typeof v === 'object' && v !== null) {
-                    return `${label}: ${fmt(v, k)}`;
+                    const groupedObject = Object.fromEntries(
+                        Object.entries(v as Record<string, unknown>)
+                            .filter(([sk]) => !fieldConfigs[`${k}.${sk}`]?.separateColumn)
+                    );
+                    if (!hasValue(groupedObject)) return '';
+                    return `${label}: ${fmt(groupedObject, k)}`;
                 }
 
                 return `${label}: ${fmt(v)}`;
             })
+            .filter(Boolean)
             .join('\n');
 
         if (chiTietIdx >= 0) {

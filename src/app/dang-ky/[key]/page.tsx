@@ -3,6 +3,10 @@ import Link from 'next/link';
 import { getRegistrationTypes, getLandingConfig } from '@/actions/settings';
 import RegistrationWizard from '@/components/RegistrationWizard';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 interface PageProps {
     params: Promise<{ key: string }>;
 }
