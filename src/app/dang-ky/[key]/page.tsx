@@ -56,7 +56,7 @@ export default async function FormPage({ params }: PageProps) {
         );
     }
 
-    return <RegistrationWizard initialRegType={regType} />;
+    return <RegistrationWizard key={regType.key} initialRegType={regType} />;
 }
 
 // Generate metadata for SEO
