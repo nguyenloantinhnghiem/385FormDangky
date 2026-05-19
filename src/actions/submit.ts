@@ -82,11 +82,6 @@ function buildFormattedText(applicant: SubmitPayload['applicant'], formData: For
 
     // c. Tâm linh bài 8
     if (hasBai8) {
-        let letter = 'b';
-        if (hlTrong49.length > 0 && hlNgoai49.length > 0) letter = 'c';
-        else if (hlTrong49.length > 0 || hlNgoai49.length > 0) letter = 'b';
-        else letter = 'a';
-        // Actually let's be smarter
         const usedLetters: string[] = [];
         if (hlTrong49.length > 0) usedLetters.push('a');
         if (hlNgoai49.length > 0) usedLetters.push(usedLetters.length === 0 ? 'a' : 'b');

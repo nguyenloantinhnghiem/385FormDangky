@@ -1,6 +1,6 @@
 'use server';
 
-import { listSubmissions, listSubmissionItems, getSubmissionById } from '@/lib/sheets/helpers';
+import { listSubmissions, getSubmissionById } from '@/lib/sheets/helpers';
 
 interface AdminResult<T> {
     success: boolean;
