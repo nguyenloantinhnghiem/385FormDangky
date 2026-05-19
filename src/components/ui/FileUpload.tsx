@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useRef, useCallback } from 'react';
 import { uploadFile } from '@/actions/upload';
 import { Camera, X, Upload, Loader2, CheckCircle, ImageIcon } from 'lucide-react';
@@ -76,12 +77,18 @@ export default function FileUpload({ value, onChange, label, hint }: FileUploadP
 
             {displayUrl ? (
                 <div className="relative group rounded-xl overflow-hidden border border-stone-200 bg-stone-50">
-                    <img
-                        src={preview || ''}
-                        alt="Ảnh đã tải"
-                        className="w-full max-h-64 object-contain"
-                        style={{ display: preview ? 'block' : 'none' }}
-                    />
+                    {preview && (
+                        <div className="relative h-64 w-full">
+                            <Image
+                                src={preview}
+                                alt="Ảnh đã tải"
+                                fill
+                                sizes="(max-width: 768px) 100vw, 640px"
+                                className="object-contain"
+                                unoptimized
+                            />
+                        </div>
+                    )}
                     {!preview && value && (
                         <div className="flex items-center gap-2 p-4 text-sm text-emerald-700">
                             <CheckCircle className="w-4 h-4" />

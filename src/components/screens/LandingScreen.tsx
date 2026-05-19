@@ -7,6 +7,8 @@ import { ArrowRight, Heart, RotateCcw, Play, Lock, Clock, ChevronLeft, Search } 
 import { getLandingConfig, getRegistrationTypes, type LandingConfig, type RegistrationType } from '@/actions/settings';
 
 interface LandingScreenProps {
+    initialConfig?: LandingConfig;
+    initialTypes?: RegistrationType[];
     onStart: (regType?: RegistrationType) => void;
     onLookup: () => void;
 }
@@ -38,18 +40,19 @@ function useCountdown(targetISO: string) {
     return timeLeft;
 }
 
-export default function LandingScreen({ onStart, onLookup }: LandingScreenProps) {
-    const [config, setConfig] = useState<LandingConfig | null>(null);
-    const [allTypes, setAllTypes] = useState<RegistrationType[]>([]);
+export default function LandingScreen({ initialConfig, initialTypes, onStart, onLookup }: LandingScreenProps) {
+    const [config, setConfig] = useState<LandingConfig | null>(initialConfig || null);
+    const [allTypes, setAllTypes] = useState<RegistrationType[]>(initialTypes || []);
     const [showVideo, setShowVideo] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!initialConfig || !initialTypes);
     const [selectedParent, setSelectedParent] = useState<RegistrationType | null>(null);
 
     useEffect(() => {
+        if (initialConfig && initialTypes) return;
         Promise.all([getLandingConfig(), getRegistrationTypes()])
             .then(([cfg, types]) => { setConfig(cfg); setAllTypes(types); })
             .finally(() => setLoading(false));
-    }, []);
+    }, [initialConfig, initialTypes]);
 
     const getEmbedUrl = useCallback((url: string) => {
         if (url.includes('/embed/')) return url;

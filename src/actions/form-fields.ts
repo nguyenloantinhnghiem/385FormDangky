@@ -1,6 +1,8 @@
 'use server';
 
+import { unstable_noStore as noStore } from 'next/cache';
 import { getSheetsClient } from '@/lib/sheets/client';
+import { getOrSetTtlCache } from '@/lib/server/ttl-cache';
 
 export interface FormFieldDef {
     formType: string;
@@ -144,7 +146,10 @@ function compareFields(a: FormFieldDef, b: FormFieldDef): number {
 }
 
 export async function getFormFields(formType: string): Promise<FormSection[]> {
+    noStore();
     try {
+        const requestedFormType = formType.trim();
+        return await getOrSetTtlCache(`form-fields:${requestedFormType}`, async () => {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId,
@@ -157,17 +162,17 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
         // First pass: collect all container-type field keys (group/block)
         const containerFieldKeys = new Set<string>();
         for (const row of rows.slice(1)) {
-            const rowFormType = getCell(row, headerMap, 'formType');
+            const rowFormType = getCell(row, headerMap, 'formType').trim();
             const fieldType = normalizeFieldType(getCell(row, headerMap, 'fieldType') || 'text');
-            if (rowFormType === formType && (fieldType === 'group' || fieldType === 'block')) {
+            if (rowFormType === requestedFormType && (fieldType === 'group' || fieldType === 'block')) {
                 containerFieldKeys.add(getCell(row, headerMap, 'fieldKey') || '');
             }
         }
 
         const allFields: FormFieldDef[] = rows.slice(1)
-            .filter((row) => getCell(row, headerMap, 'formType') === formType)
+            .filter((row) => getCell(row, headerMap, 'formType').trim() === requestedFormType)
             .map((row, sourceIndex) => {
-                const fieldKey = getCell(row, headerMap, 'fieldKey');
+                const fieldKey = getCell(row, headerMap, 'fieldKey').trim();
                 const fieldType = normalizeFieldType(getCell(row, headerMap, 'fieldType') || 'text');
                 const optionsRaw = getCell(row, headerMap, 'options');
                 const toneRaw = getCell(row, headerMap, 'tone');
@@ -193,7 +198,7 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
                 const options = (supportsOptions && !isContainerRef && optionsRaw) ? optionsRaw.split('|').map((o) => o.trim()) : [];
 
                 return {
-                    formType: getCell(row, headerMap, 'formType') || '',
+                    formType: getCell(row, headerMap, 'formType').trim() || '',
                     section: getCell(row, headerMap, 'section') || 'Thông tin',
                     fieldKey: isSubFieldDot ? fieldKey : fieldKey,
                     fieldLabel: getCell(row, headerMap, 'fieldLabel') || '',
@@ -231,6 +236,7 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
         }
 
         return Array.from(sectionMap.entries()).map(([name, fields]) => ({ name, fields: fields.sort(compareFields) }));
+        });
     } catch (err) {
         console.error('getFormFields error:', err);
         return [];

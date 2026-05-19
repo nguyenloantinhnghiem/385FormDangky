@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import {
+    Controller,
+    type Control,
+    type UseFormRegister,
+    useFieldArray,
+    useForm,
+    useWatch,
+} from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,6 +40,9 @@ interface RegistrationFormScreenProps {
 
 const EMPTY_NGUOI_MAT: NguoiMat = { hoTen: '', ngayMat: '', tho: '', anTangTai: '' };
 const EMPTY_NGHIEP: NghiepItem = { moTa: '' };
+
+type PersonArrayFieldName = 'hlTrong49' | 'hlNgoai49';
+type TextArrayFieldName = 'bai8_danhSachNghiep' | 'tamLinhKhac';
 
 const DEFAULT_VALUES: AllInOneFormData = {
     hlTrong49: [],
@@ -94,9 +104,14 @@ function Section({ icon, title, subtitle, count, children }: {
 // ============================================================
 // Repeatable person card (HL trong/ngoài 49)
 // ============================================================
-function PersonCards({ fieldArrayName, control, register }: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fieldArrayName: string; control: any; register: any;
+function PersonCards({
+    fieldArrayName,
+    control,
+    register,
+}: {
+    fieldArrayName: PersonArrayFieldName;
+    control: Control<AllInOneFormData>;
+    register: UseFormRegister<AllInOneFormData>;
 }) {
     const { fields, append, remove } = useFieldArray({ control, name: fieldArrayName });
 
@@ -133,9 +148,18 @@ function PersonCards({ fieldArrayName, control, register }: {
 // ============================================================
 // Repeatable text items
 // ============================================================
-function TextItemCards({ fieldArrayName, control, register, placeholder, addLabel }: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fieldArrayName: string; control: any; register: any; placeholder: string; addLabel: string;
+function TextItemCards({
+    fieldArrayName,
+    control,
+    register,
+    placeholder,
+    addLabel,
+}: {
+    fieldArrayName: TextArrayFieldName;
+    control: Control<AllInOneFormData>;
+    register: UseFormRegister<AllInOneFormData>;
+    placeholder: string;
+    addLabel: string;
 }) {
     const { fields, append, remove } = useFieldArray({ control, name: fieldArrayName });
 
@@ -165,17 +189,30 @@ function TextItemCards({ fieldArrayName, control, register, placeholder, addLabe
 // Main form
 // ============================================================
 export default function RegistrationFormScreen({ defaultValues, onNext, onBack }: RegistrationFormScreenProps) {
-    const { register, handleSubmit, control, watch } = useForm<AllInOneFormData>({
+    const { register, handleSubmit, control } = useForm<AllInOneFormData>({
         defaultValues: defaultValues || DEFAULT_VALUES,
     });
 
-    const hlTrong49 = watch('hlTrong49');
-    const hlNgoai49 = watch('hlNgoai49');
-    const bai8Nghiep = watch('bai8_danhSachNghiep');
-    const bai8GiaTien = watch('bai8_hlGiaTien');
-    const bai8TrenDat = watch('bai8_hlTrenDat');
-    const bai8CungDuong = watch('bai8_cungDuong');
-    const tamLinhKhac = watch('tamLinhKhac');
+    const [
+        hlTrong49,
+        hlNgoai49,
+        bai8Nghiep,
+        bai8GiaTien,
+        bai8TrenDat,
+        bai8CungDuong,
+        tamLinhKhac,
+    ] = useWatch({
+        control,
+        name: [
+            'hlTrong49',
+            'hlNgoai49',
+            'bai8_danhSachNghiep',
+            'bai8_hlGiaTien',
+            'bai8_hlTrenDat',
+            'bai8_cungDuong',
+            'tamLinhKhac',
+        ],
+    });
 
     const bai8Count = (bai8Nghiep?.length || 0) + (bai8GiaTien ? 1 : 0) + (bai8TrenDat ? 1 : 0) + (bai8CungDuong === 'co' ? 1 : 0);
 

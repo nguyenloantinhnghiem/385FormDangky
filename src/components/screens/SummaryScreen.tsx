@@ -39,8 +39,6 @@ export default function SummaryScreen({
     const tamLinhKhac = formData.tamLinhKhac || [];
     const hasBai8 = formData.bai8_cungDuong === 'co' || formData.bai8_hlGiaTien || formData.bai8_hlTrenDat || bai8Nghiep.length > 0;
 
-    const totalItems = hlTrong49.length + hlNgoai49.length + (hasBai8 ? 1 : 0) + tamLinhKhac.length;
-
     return (
         <div className="animate-slide-in">
             <div className="flex items-center gap-3 mb-6">

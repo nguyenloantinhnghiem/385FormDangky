@@ -6,10 +6,24 @@ import { useRouter } from 'next/navigation';
 import { CEREMONY_MAP } from '@/config/categories';
 import { submitRegistration } from '@/actions/submit';
 import { submitDynamicRegistration } from '@/actions/submit-dynamic';
-import { saveDraft, loadDraft, clearDraft, hasDraft, clearAllDrafts, saveProfile } from '@/lib/utils/draft';
+import {
+    saveDraft,
+    loadDraft,
+    clearDraft,
+    hasDraft,
+    clearAllDrafts,
+    clearDraftsExcept,
+    clearAllReregisterData,
+    clearReregisterDataExcept,
+    consumeReregisterData,
+    saveReregisterData,
+    makeFormScopeKey,
+    saveProfile,
+} from '@/lib/utils/draft';
 import type { Applicant, CeremonyType, ScreenName } from '@/types';
 import type { AllInOneFormData } from '@/components/screens/RegistrationFormScreen';
-import type { RegistrationType } from '@/actions/settings';
+import type { LandingConfig, RegistrationType } from '@/actions/settings';
+import type { FormSection } from '@/actions/form-fields';
 
 import LandingScreen from '@/components/screens/LandingScreen';
 import CeremonySelectScreen from '@/components/screens/CeremonySelectScreen';
@@ -270,6 +284,9 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
 
 interface WizardProps {
     initialRegType?: RegistrationType;
+    initialFormSections?: FormSection[];
+    initialLandingConfig?: LandingConfig;
+    initialRegistrationTypes?: RegistrationType[];
 }
 
 interface ReregisterData {
@@ -277,6 +294,8 @@ interface ReregisterData {
     formData?: Record<string, unknown> | null;
     registrationKey?: string;
     formType?: string;
+    formScope?: string;
+    savedAt?: string;
 }
 
 const LEGACY_CAU_SIEU_TYPES = new Set(['trai_tang', 'trai_vien', 'tuy_duyen', 'cau_sieu']);
@@ -303,12 +322,17 @@ function getPastDynamicFormData(sub: PastSubmission): Record<string, unknown> | 
         item.categoryKey === sub.formType
         || item.categoryKey === sub.registrationKey
         || item.categoryLabel === sub.registrationLabel
-    ) || sub.itemsData[0];
+    );
 
     return preferredItem ? parsePayloadObject(preferredItem.payloadJson) : null;
 }
 
-export default function RegistrationWizard({ initialRegType }: WizardProps) {
+export default function RegistrationWizard({
+    initialRegType,
+    initialFormSections,
+    initialLandingConfig,
+    initialRegistrationTypes,
+}: WizardProps) {
     const router = useRouter();
 
     // Determine the starting screen based on initialRegType
@@ -332,12 +356,15 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
     const [isReregistering, setIsReregistering] = useState(false);
 
     // Form key for draft isolation
-    const formKey = registrationType?.key;
+    const formScope = registrationType
+        ? makeFormScopeKey(registrationType.key, registrationType.formType)
+        : undefined;
 
     // Navigate home: clear all state and go to landing
     const goHome = useCallback(() => {
         // Clear all drafts so user starts fresh
         clearAllDrafts();
+        clearAllReregisterData();
         // Reset all state
         setRegistrationType(null);
         setCeremonyType(null);
@@ -362,17 +389,17 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
         if (initialRegType) {
             // Check for reregister data (saved by lookup flow)
             try {
-                const reregRaw = localStorage.getItem('reregister_data');
-                if (reregRaw) {
-                    const reregData = JSON.parse(reregRaw) as Partial<ReregisterData>;
-                    const matchesCurrentForm = (!reregData.registrationKey && !reregData.formType)
-                        || reregData.registrationKey === initialRegType.key
-                        || reregData.formType === initialRegType.formType;
+                const currentScope = makeFormScopeKey(initialRegType.key, initialRegType.formType);
+                clearDraftsExcept(currentScope);
+                clearReregisterDataExcept(currentScope);
 
-                    localStorage.removeItem('reregister_data');
+                const reregData = consumeReregisterData<Partial<ReregisterData>>(currentScope);
+                if (reregData) {
+                    const matchesCurrentForm = reregData.registrationKey === initialRegType.key
+                        && reregData.formType === initialRegType.formType;
+
                     if (!matchesCurrentForm) {
-                        clearDraft(initialRegType.key);
-                        clearAllDrafts();
+                        clearDraft(currentScope);
                         return;
                     }
 
@@ -393,8 +420,10 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             } catch {
                 // ignore
             }
-            clearDraft(initialRegType.key);
-            clearAllDrafts();
+            const currentScope = makeFormScopeKey(initialRegType.key, initialRegType.formType);
+            clearDraft(currentScope);
+            clearDraftsExcept(currentScope);
+            clearReregisterDataExcept(currentScope);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -424,8 +453,11 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             items: [],
             currentScreen: screen,
             lastUpdated: new Date().toISOString(),
-        }, formKey);
-    }, [ceremonyType, applicant, screen, formKey]);
+        }, formScope, {
+            registrationKey: registrationType?.key || '',
+            formType: registrationType?.formType || '',
+        });
+    }, [ceremonyType, applicant, screen, formScope, registrationType]);
 
     useEffect(() => {
         if (screen !== 'landing' && screen !== 'success') {
@@ -557,7 +589,12 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                 return;
             }
 
-            if (initialRegType && (targetKey === initialRegType.key || sub.formType === initialRegType.formType)) {
+            const targetScope = makeFormScopeKey(targetKey, sub.formType);
+            const currentScope = initialRegType
+                ? makeFormScopeKey(initialRegType.key, initialRegType.formType)
+                : '';
+
+            if (initialRegType && targetScope === currentScope) {
                 setCeremonyType(null);
                 setFormData(null);
                 setDynamicFormData(pastFormData || {});
@@ -568,16 +605,13 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                 return;
             }
 
-            try {
-                localStorage.setItem('reregister_data', JSON.stringify({
-                    applicant: pastApplicant,
-                    formData: pastFormData,
-                    registrationKey: targetKey,
-                    formType: sub.formType,
-                }));
-            } catch {
-                // ignore
-            }
+            clearReregisterDataExcept(targetScope);
+            saveReregisterData(targetScope, {
+                applicant: pastApplicant,
+                formData: pastFormData,
+                registrationKey: targetKey,
+                formType: sub.formType,
+            });
             // Use window.location for full page navigation to the direct form link
             window.location.href = `/dang-ky/${encodeURIComponent(targetKey)}`;
         }
@@ -593,6 +627,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
             let result;
             if (isDynamic && dynamicFormData) {
                 result = await submitDynamicRegistration({
+                    registrationKey: registrationType!.key,
                     registrationType: registrationType!.formType,
                     registrationLabel: registrationType!.label,
                     applicant,
@@ -612,7 +647,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
             if (result.success && result.code) {
                 setSubmissionCode(result.code);
-                clearDraft(formKey);
+                clearDraft(formScope);
                 // Auto-save profile for future forms
                 if (applicant) {
                     saveProfile({ tinChu: applicant.tinChu, phone: applicant.phone, to: applicant.to || '' });
@@ -637,7 +672,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
         setDynamicFieldLabels({});
         setSubmissionCode('');
         setIsReregistering(false);
-        clearDraft(formKey);
+        clearDraft(formScope);
         goTo('landing');
     };
 
@@ -692,6 +727,8 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
                 {screen === 'landing' && (
                     <LandingScreen
+                        initialConfig={initialLandingConfig}
+                        initialTypes={initialRegistrationTypes}
                         onStart={handleStart}
                         onLookup={() => goTo('lookup')}
                     />
@@ -728,6 +765,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                         formType={registrationType.formType}
                         formLabel={registrationType.label}
                         videoUrl={registrationType.videoUrl}
+                        initialSections={initialRegType?.formType === registrationType.formType ? initialFormSections : undefined}
                         defaultValues={dynamicFormData || undefined}
                         applicant={applicant}
                         isReregistering={isReregistering}
