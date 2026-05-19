@@ -3,7 +3,15 @@
 import { v4 as uuidv4 } from 'uuid';
 import { CEREMONY_MAP } from '@/config/categories';
 import { generateSubmissionCode } from '@/lib/utils/submission-code';
-import { appendSubmission, appendSubmissionItems, appendAuditLog, appendSummaryRow, getNextSTT, appendToFormSheet } from '@/lib/sheets/helpers';
+import {
+    appendSubmission,
+    appendSubmissionItems,
+    appendAuditLog,
+    appendSummaryRow,
+    getNextSTT,
+    appendToFormSheet,
+    type FormSheetFieldConfig,
+} from '@/lib/sheets/helpers';
 
 interface NguoiMat { hoTen: string; ngayMat?: string; tho?: string; anTangTai?: string; }
 interface NghiepItem { moTa: string; }
@@ -227,59 +235,139 @@ export async function submitRegistration(payload: SubmitPayload): Promise<Submit
             formattedText,
         ]);
 
-        // 2. Write to separate KQ_Cầu Siêu sheet
+        // 2. Write to formatted result sheets for Cầu Siêu
         const cauSieuData: Record<string, unknown> = {};
-        const cauSieuConfigs: Record<string, { label: string; separateColumn: boolean }> = {};
+        const cauSieuConfigs: Record<string, FormSheetFieldConfig> = {};
 
-        // Ceremony type
         cauSieuData['loai_le'] = ceremonyLabel;
-        cauSieuConfigs['loai_le'] = { label: 'Loại lễ', separateColumn: true };
+        cauSieuConfigs['loai_le'] = {
+            label: 'Loại lễ',
+            blockKey: 'thong_tin_le',
+            blockLabel: 'Thông tin lễ',
+            order: 1,
+            fieldType: 'text',
+        };
 
-        // HL trong 49 ngày
-        const hlTrong = (formData.hlTrong49 || []).filter(n => n.hoTen?.trim());
-        if (hlTrong.length > 0) {
-            cauSieuData['hl_trong_49'] = hlTrong.map((n, i) =>
-                `${i+1}. ${n.hoTen} — Mất: ${n.ngayMat||'?'}, Thọ: ${n.tho||'?'}, An táng: ${n.anTangTai||'?'}`
-            ).join('\n');
-            cauSieuConfigs['hl_trong_49'] = { label: 'HL trong 49 ngày', separateColumn: true };
-        }
+        const hlTrong = (formData.hlTrong49 || []).filter((n) => n.hoTen?.trim());
+        cauSieuData['hl_trong_49'] = hlTrong;
+        cauSieuConfigs['hl_trong_49'] = {
+            label: 'HL mới mất (trong 49 ngày)',
+            blockKey: 'hl_trong_49',
+            blockLabel: 'HL mới mất (trong 49 ngày)',
+            order: 10,
+            fieldType: 'group',
+        };
+        [
+            ['hoTen', 'Họ tên người mất'],
+            ['ngayMat', 'Ngày mất'],
+            ['tho', 'Thọ'],
+            ['anTangTai', 'An táng tại'],
+        ].forEach(([key, label], index) => {
+            cauSieuConfigs[`hl_trong_49.${key}`] = {
+                label,
+                blockKey: 'hl_trong_49',
+                blockLabel: 'HL mới mất (trong 49 ngày)',
+                order: 10000 + index,
+                fieldType: 'text',
+            };
+        });
 
-        // HL ngoài 49 ngày
-        const hlNgoai = (formData.hlNgoai49 || []).filter(n => n.hoTen?.trim());
-        if (hlNgoai.length > 0) {
-            cauSieuData['hl_ngoai_49'] = hlNgoai.map((n, i) =>
-                `${i+1}. ${n.hoTen} — Mất: ${n.ngayMat||'?'}, Thọ: ${n.tho||'?'}, An táng: ${n.anTangTai||'?'}`
-            ).join('\n');
-            cauSieuConfigs['hl_ngoai_49'] = { label: 'HL ngoài 49 ngày', separateColumn: true };
-        }
+        const hlNgoai = (formData.hlNgoai49 || []).filter((n) => n.hoTen?.trim());
+        cauSieuData['hl_ngoai_49'] = hlNgoai;
+        cauSieuConfigs['hl_ngoai_49'] = {
+            label: 'HL ngoài 49 ngày (rõ tên)',
+            blockKey: 'hl_ngoai_49',
+            blockLabel: 'HL ngoài 49 ngày (rõ tên)',
+            order: 20,
+            fieldType: 'group',
+        };
+        [
+            ['hoTen', 'Họ tên người mất'],
+            ['ngayMat', 'Ngày mất'],
+            ['tho', 'Thọ'],
+            ['anTangTai', 'An táng tại'],
+        ].forEach(([key, label], index) => {
+            cauSieuConfigs[`hl_ngoai_49.${key}`] = {
+                label,
+                blockKey: 'hl_ngoai_49',
+                blockLabel: 'HL ngoài 49 ngày (rõ tên)',
+                order: 20000 + index,
+                fieldType: 'text',
+            };
+        });
 
-        // Bài 8
-        const hasBai8Data = formData.bai8_cungDuong === 'co' || formData.bai8_hlGiaTien || formData.bai8_hlTrenDat
-            || (formData.bai8_danhSachNghiep && formData.bai8_danhSachNghiep.filter(n => n.moTa?.trim()).length > 0);
+        const bai8NghiepItems = (formData.bai8_danhSachNghiep || []).filter((n) => n.moTa?.trim());
+        const hasBai8Data = formData.bai8_cungDuong === 'co' || formData.bai8_hlGiaTien || formData.bai8_hlTrenDat || bai8NghiepItems.length > 0;
         if (hasBai8Data) {
-            const parts: string[] = [];
-            if (formData.bai8_cungDuong === 'co') parts.push('Cúng dường chư Thiên');
-            if (formData.bai8_hlGiaTien) parts.push('HL gia tiên');
-            if (formData.bai8_hlTrenDat) parts.push('HL trên đất');
-            for (const n of formData.bai8_danhSachNghiep || []) { if (n.moTa?.trim()) parts.push(n.moTa); }
-            cauSieuData['bai_8'] = parts.join('\n');
-            cauSieuConfigs['bai_8'] = { label: 'Tâm linh bài 8', separateColumn: true };
+            cauSieuData['bai_8'] = {
+                cung_duong: formData.bai8_cungDuong === 'co',
+                hl_gia_tien: formData.bai8_hlGiaTien || false,
+                hl_tren_dat: formData.bai8_hlTrenDat || false,
+                danh_sach_nghiep: bai8NghiepItems.map((item) => item.moTa).join('\n'),
+                ghi_chu: formData.bai8_ghiChu || '',
+            };
         }
+        cauSieuConfigs['bai_8'] = {
+            label: 'Tâm linh bài 8',
+            blockKey: 'bai_8',
+            blockLabel: 'Tâm linh bài 8',
+            order: 30,
+            fieldType: 'block',
+        };
+        [
+            ['cung_duong', 'Cúng dường chư Thiên'],
+            ['hl_gia_tien', 'HL gia tiên'],
+            ['hl_tren_dat', 'HL trên đất'],
+            ['danh_sach_nghiep', 'HL trên nghiệp'],
+            ['ghi_chu', 'Ghi chú bài 8'],
+        ].forEach(([key, label], index) => {
+            cauSieuConfigs[`bai_8.${key}`] = {
+                label,
+                blockKey: 'bai_8',
+                blockLabel: 'Tâm linh bài 8',
+                order: 30000 + index,
+                fieldType: 'text',
+            };
+        });
 
-        // Tâm linh khác
-        const tlKhac = (formData.tamLinhKhac || []).filter(n => n.moTa?.trim());
-        if (tlKhac.length > 0) {
-            cauSieuData['tam_linh_khac'] = tlKhac.map(n => n.moTa).join('\n');
-            cauSieuConfigs['tam_linh_khac'] = { label: 'Tâm linh khác', separateColumn: true };
-        }
+        const tlKhac = (formData.tamLinhKhac || []).filter((n) => n.moTa?.trim());
+        cauSieuData['tam_linh_khac'] = tlKhac;
+        cauSieuConfigs['tam_linh_khac'] = {
+            label: 'Tâm linh khác',
+            blockKey: 'tam_linh_khac',
+            blockLabel: 'Tâm linh khác',
+            order: 40,
+            fieldType: 'group',
+        };
+        cauSieuConfigs['tam_linh_khac.moTa'] = {
+            label: 'Nội dung',
+            blockKey: 'tam_linh_khac',
+            blockLabel: 'Tâm linh khác',
+            order: 40000,
+            fieldType: 'textarea',
+        };
 
-        // Ghi chú
         if (applicant.notes?.trim()) {
             cauSieuData['ghi_chu'] = applicant.notes;
-            cauSieuConfigs['ghi_chu'] = { label: 'Ghi chú', separateColumn: false };
         }
+        cauSieuConfigs['ghi_chu'] = {
+            label: 'Ghi chú',
+            blockKey: 'ghi_chu',
+            blockLabel: 'Ghi chú',
+            order: 50,
+            fieldType: 'textarea',
+        };
 
-        await appendToFormSheet('Cầu Siêu', applicant, cauSieuData, cauSieuConfigs);
+        try {
+            await appendToFormSheet('Cầu Siêu', applicant, cauSieuData, cauSieuConfigs, {
+                submissionCode,
+                registrationType: ceremonyType,
+                registrationLabel: ceremonyLabel,
+                submittedAtIso: now,
+            });
+        } catch (e) {
+            console.error('appendToFormSheet error (non-fatal):', e);
+        }
 
         // 3. Write structured submission row
         await appendSubmission({

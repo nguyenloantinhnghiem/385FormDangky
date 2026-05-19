@@ -2,7 +2,15 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { generateSubmissionCode } from '@/lib/utils/submission-code';
-import { appendSubmission, appendSubmissionItems, appendAuditLog, appendSummaryRow, getNextSTT, appendToFormSheet } from '@/lib/sheets/helpers';
+import {
+    appendSubmission,
+    appendSubmissionItems,
+    appendAuditLog,
+    appendSummaryRow,
+    getNextSTT,
+    appendToFormSheet,
+    type FormSheetFieldConfig,
+} from '@/lib/sheets/helpers';
 import { getFormFields, type FormFieldDef, type FormSection } from '@/actions/form-fields';
 import { getRegistrationTypes } from '@/actions/settings';
 
@@ -251,28 +259,46 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
 
         // Write to per-form-type sheet (KQ_{label}) — reuse sections from above
         try {
-            const fieldConfigs: Record<string, { label: string; separateColumn: boolean }> = {};
+            const fieldConfigs: Record<string, FormSheetFieldConfig> = {};
+            const parentFields = new Map<string, FormFieldDef>();
+            sections.flatMap((section) => section.fields).forEach((field) => {
+                if (!field.groupKey) parentFields.set(field.fieldKey, field);
+            });
+
             for (const sec of sections) {
                 for (const f of sec.fields) {
+                    if (isPresentationField(f)) continue;
+
                     if (f.groupKey && f.subFieldKey) {
-                        // Sub-field: keep the sheet's "Cột riêng" setting for fields inside group/block.
+                        const parent = parentFields.get(f.groupKey);
                         fieldConfigs[`${f.groupKey}.${f.subFieldKey}`] = {
                             label: f.fieldLabel,
                             separateColumn: f.separateColumn,
-                        };
-                        fieldConfigs[f.subFieldKey] = {
-                            label: f.fieldLabel,
-                            separateColumn: f.separateColumn,
+                            blockKey: parent?.fieldKey || f.groupKey,
+                            blockLabel: parent?.fieldLabel || sec.name || 'Thông tin biểu mẫu',
+                            order: ((parent?.order ?? f.order) * 1000) + f.order,
+                            fieldType: f.fieldType,
                         };
                     } else {
+                        const isContainer = f.fieldType === 'group' || f.fieldType === 'block';
                         fieldConfigs[f.fieldKey] = {
                             label: f.fieldLabel,
-                            separateColumn: f.fieldType === 'group' || f.fieldType === 'block' ? false : f.separateColumn,
+                            separateColumn: true,
+                            blockKey: isContainer ? f.fieldKey : `section:${sec.name}`,
+                            blockLabel: isContainer ? f.fieldLabel : sec.name || 'Thông tin biểu mẫu',
+                            order: f.order,
+                            fieldType: f.fieldType,
                         };
                     }
                 }
             }
-            await appendToFormSheet(registrationLabel, applicant, formData, fieldConfigs);
+            await appendToFormSheet(registrationLabel, applicant, formData, fieldConfigs, {
+                submissionCode,
+                registrationKey: resolvedRegType?.key || normalizedRegistrationKey,
+                registrationType,
+                registrationLabel,
+                submittedAtIso: now,
+            });
         } catch (e) {
             console.error('appendToFormSheet error (non-fatal):', e);
         }
