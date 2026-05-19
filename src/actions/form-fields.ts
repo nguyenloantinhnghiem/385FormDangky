@@ -2,6 +2,7 @@
 
 import { unstable_noStore as noStore } from 'next/cache';
 import { getSheetsClient } from '@/lib/sheets/client';
+import { getOrSetTtlCache } from '@/lib/server/ttl-cache';
 
 export interface FormFieldDef {
     formType: string;
@@ -148,6 +149,7 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
     noStore();
     try {
         const requestedFormType = formType.trim();
+        return await getOrSetTtlCache(`form-fields:${requestedFormType}`, async () => {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId,
@@ -234,6 +236,7 @@ export async function getFormFields(formType: string): Promise<FormSection[]> {
         }
 
         return Array.from(sectionMap.entries()).map(([name, fields]) => ({ name, fields: fields.sort(compareFields) }));
+        });
     } catch (err) {
         console.error('getFormFields error:', err);
         return [];

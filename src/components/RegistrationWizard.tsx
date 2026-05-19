@@ -22,7 +22,8 @@ import {
 } from '@/lib/utils/draft';
 import type { Applicant, CeremonyType, ScreenName } from '@/types';
 import type { AllInOneFormData } from '@/components/screens/RegistrationFormScreen';
-import type { RegistrationType } from '@/actions/settings';
+import type { LandingConfig, RegistrationType } from '@/actions/settings';
+import type { FormSection } from '@/actions/form-fields';
 
 import LandingScreen from '@/components/screens/LandingScreen';
 import CeremonySelectScreen from '@/components/screens/CeremonySelectScreen';
@@ -283,6 +284,9 @@ function DynamicSummary({ registrationLabel, applicant, formData, fieldLabels, i
 
 interface WizardProps {
     initialRegType?: RegistrationType;
+    initialFormSections?: FormSection[];
+    initialLandingConfig?: LandingConfig;
+    initialRegistrationTypes?: RegistrationType[];
 }
 
 interface ReregisterData {
@@ -323,7 +327,12 @@ function getPastDynamicFormData(sub: PastSubmission): Record<string, unknown> | 
     return preferredItem ? parsePayloadObject(preferredItem.payloadJson) : null;
 }
 
-export default function RegistrationWizard({ initialRegType }: WizardProps) {
+export default function RegistrationWizard({
+    initialRegType,
+    initialFormSections,
+    initialLandingConfig,
+    initialRegistrationTypes,
+}: WizardProps) {
     const router = useRouter();
 
     // Determine the starting screen based on initialRegType
@@ -718,6 +727,8 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
 
                 {screen === 'landing' && (
                     <LandingScreen
+                        initialConfig={initialLandingConfig}
+                        initialTypes={initialRegistrationTypes}
                         onStart={handleStart}
                         onLookup={() => goTo('lookup')}
                     />
@@ -754,6 +765,7 @@ export default function RegistrationWizard({ initialRegType }: WizardProps) {
                         formType={registrationType.formType}
                         formLabel={registrationType.label}
                         videoUrl={registrationType.videoUrl}
+                        initialSections={initialRegType?.formType === registrationType.formType ? initialFormSections : undefined}
                         defaultValues={dynamicFormData || undefined}
                         applicant={applicant}
                         isReregistering={isReregistering}

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getRegistrationTypes, getLandingConfig } from '@/actions/settings';
+import { getFormFields } from '@/actions/form-fields';
 import RegistrationWizard from '@/components/RegistrationWizard';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +38,10 @@ function ClosedMessage({ label, message }: { label: string; message?: string }) 
 
 export default async function FormPage({ params }: PageProps) {
     const { key } = await params;
-    const types = await getRegistrationTypes();
+    const [types, config] = await Promise.all([
+        getRegistrationTypes(),
+        getLandingConfig(),
+    ]);
     const regType = types.find((t) => t.key === key);
 
     if (!regType) {
@@ -49,8 +53,6 @@ export default async function FormPage({ params }: PageProps) {
         return <ClosedMessage label={regType.label} />;
     }
 
-    // Check global registration status
-    const config = await getLandingConfig();
     if (!config.registrationOpen) {
         return (
             <ClosedMessage
@@ -60,7 +62,19 @@ export default async function FormPage({ params }: PageProps) {
         );
     }
 
-    return <RegistrationWizard key={regType.key} initialRegType={regType} />;
+    const initialFormSections = regType.formType === 'cau_sieu'
+        ? []
+        : await getFormFields(regType.formType);
+
+    return (
+        <RegistrationWizard
+            key={regType.key}
+            initialRegType={regType}
+            initialFormSections={initialFormSections}
+            initialLandingConfig={config}
+            initialRegistrationTypes={types}
+        />
+    );
 }
 
 // Generate metadata for SEO

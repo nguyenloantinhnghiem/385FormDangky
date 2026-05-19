@@ -3,6 +3,11 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { readSettings } from '@/lib/sheets/helpers';
 import { getSheetsClient } from '@/lib/sheets/client';
+import { getOrSetTtlCache } from '@/lib/server/ttl-cache';
+
+async function readSettingsCached(): Promise<Record<string, string>> {
+    return getOrSetTtlCache('settings', readSettings);
+}
 
 // ============================================================
 // Video guide URL
@@ -10,7 +15,7 @@ import { getSheetsClient } from '@/lib/sheets/client';
 export async function getGuideVideoUrl(): Promise<string | null> {
     noStore();
     try {
-        const settings = await readSettings();
+        const settings = await readSettingsCached();
         return settings['video_url'] || null;
     } catch {
         return null;
@@ -29,7 +34,7 @@ export interface RegistrationStatus {
 export async function getRegistrationStatus(): Promise<RegistrationStatus> {
     noStore();
     try {
-        const settings = await readSettings();
+        const settings = await readSettingsCached();
         return {
             open: (settings['registration_open'] || 'true').toLowerCase() === 'true',
             closeMessage: settings['registration_close_message'] || 'Đăng ký đã đóng. Vui lòng chờ đợt tiếp theo.',
@@ -186,7 +191,7 @@ export interface LandingConfig {
 export async function getLandingConfig(): Promise<LandingConfig> {
     noStore();
     try {
-        const settings = await readSettings();
+        const settings = await readSettingsCached();
         const notesRaw = settings['landing_notes'] || '';
         const notes = notesRaw.split('\n').filter((n: string) => n.trim());
 
@@ -250,6 +255,7 @@ export interface RegistrationType {
 export async function getRegistrationTypes(): Promise<RegistrationType[]> {
     noStore();
     try {
+        return await getOrSetTtlCache('registration-types', async () => {
         const { sheets, spreadsheetId } = await getSheetsClient();
         const res = await sheets.spreadsheets.values.get({
             spreadsheetId,
@@ -284,6 +290,7 @@ export async function getRegistrationTypes(): Promise<RegistrationType[]> {
             }))
             .filter((r) => r.key && r.label)
             .sort((a, b) => a.order - b.order);
+        });
     } catch {
         return [{
             key: 'cau_sieu',

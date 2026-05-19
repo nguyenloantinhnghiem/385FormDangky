@@ -16,6 +16,7 @@ interface DynamicFormScreenProps {
     formType: string;
     formLabel: string;
     videoUrl?: string;
+    initialSections?: FormSection[];
     defaultValues?: Record<string, unknown>;
     applicant?: Applicant | null;
     isReregistering?: boolean;
@@ -455,10 +456,13 @@ function ReadingGateField({
     );
 }
 
-export default function DynamicFormScreen({ formType, formLabel, videoUrl, defaultValues, applicant, isReregistering = false, onEditApplicant, onNext, onBack }: DynamicFormScreenProps) {
-    const [sections, setSections] = useState<FormSection[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadedFormType, setLoadedFormType] = useState('');
+export default function DynamicFormScreen({ formType, formLabel, videoUrl, initialSections, defaultValues, applicant, isReregistering = false, onEditApplicant, onNext, onBack }: DynamicFormScreenProps) {
+    const hasInitialSections = !!initialSections?.length && initialSections.some((section) =>
+        section.fields.some((field) => field.formType === formType)
+    );
+    const [sections, setSections] = useState<FormSection[]>(hasInitialSections ? initialSections : []);
+    const [loading, setLoading] = useState(!hasInitialSections);
+    const [loadedFormType, setLoadedFormType] = useState(hasInitialSections ? formType : '');
     const [formData, setFormData] = useState<Record<string, unknown>>(defaultValues || {});
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [acceptedReadings, setAcceptedReadings] = useState<Record<string, boolean>>({});
@@ -466,7 +470,11 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
     useEffect(() => {
         let active = true;
 
-        getFormFields(formType).then((s) => {
+        const sectionsPromise = hasInitialSections
+            ? Promise.resolve(initialSections)
+            : getFormFields(formType);
+
+        sectionsPromise.then((s) => {
             if (!active) return;
             setSections(s);
             setLoadedFormType(formType);
@@ -534,7 +542,7 @@ export default function DynamicFormScreen({ formType, formLabel, videoUrl, defau
         return () => {
             active = false;
         };
-    }, [formType, defaultValues, applicant]);
+    }, [formType, defaultValues, applicant, hasInitialSections, initialSections]);
 
     const handleChange = (key: string, value: unknown) => {
         setFormData((prev) => ({ ...prev, [key]: value }));
