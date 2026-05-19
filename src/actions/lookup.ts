@@ -1,5 +1,6 @@
 'use server';
 
+import { unstable_noStore as noStore } from 'next/cache';
 import { getSheetsClient } from '@/lib/sheets/client';
 import { getRegistrationTypes, type RegistrationType } from '@/actions/settings';
 
@@ -162,12 +163,13 @@ function getDynamicFormData(
         item.categoryKey === resolvedFormType
         || item.categoryKey === regType?.key
         || item.categoryLabel === regType?.label
-    ) || items[0];
+    );
 
     return preferredItem ? parseObjectJson(preferredItem.payloadJson) : null;
 }
 
 export async function lookupByPhone(phone: string, formTypeFilter?: string): Promise<LookupResult> {
+    noStore();
     try {
         const searchPhone = normalizePhone(phone);
         if (!searchPhone || searchPhone.length < 8) {

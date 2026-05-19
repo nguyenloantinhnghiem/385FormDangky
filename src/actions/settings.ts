@@ -8,6 +8,7 @@ import { getSheetsClient } from '@/lib/sheets/client';
 // Video guide URL
 // ============================================================
 export async function getGuideVideoUrl(): Promise<string | null> {
+    noStore();
     try {
         const settings = await readSettings();
         return settings['video_url'] || null;
@@ -26,6 +27,7 @@ export interface RegistrationStatus {
 }
 
 export async function getRegistrationStatus(): Promise<RegistrationStatus> {
+    noStore();
     try {
         const settings = await readSettings();
         return {

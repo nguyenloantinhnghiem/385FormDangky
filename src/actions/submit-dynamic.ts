@@ -3,9 +3,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { generateSubmissionCode } from '@/lib/utils/submission-code';
 import { appendSubmission, appendSubmissionItems, appendAuditLog, appendSummaryRow, getNextSTT, appendToFormSheet } from '@/lib/sheets/helpers';
-import { getFormFields } from '@/actions/form-fields';
+import { getFormFields, type FormFieldDef, type FormSection } from '@/actions/form-fields';
+import { getRegistrationTypes } from '@/actions/settings';
 
 interface DynamicSubmitPayload {
+    registrationKey?: string;
     registrationType: string;
     registrationLabel: string;
     applicant: {
@@ -29,9 +31,82 @@ function hasMeaningfulValue(value: unknown): boolean {
     return true;
 }
 
+function isPresentationField(field: FormFieldDef): boolean {
+    return ['notice', 'heading', 'reading', 'video'].includes(field.fieldType);
+}
+
+function sanitizeDynamicFormData(
+    rawData: Record<string, unknown>,
+    sections: FormSection[],
+): Record<string, unknown> {
+    const fields = sections.flatMap((section) => section.fields);
+    const result: Record<string, unknown> = {};
+
+    for (const field of fields) {
+        if (field.groupKey || isPresentationField(field)) continue;
+
+        const value = rawData[field.fieldKey];
+        if (value === undefined) continue;
+
+        if (field.fieldType === 'group' || field.fieldType === 'block') {
+            const subFields = fields.filter((subField) =>
+                subField.groupKey === field.fieldKey
+                && subField.subFieldKey
+                && !isPresentationField(subField)
+            );
+            const subKeys = new Set(subFields.map((subField) => subField.subFieldKey!));
+
+            if (field.fieldType === 'group' && Array.isArray(value)) {
+                const items = value
+                    .filter(isRecord)
+                    .map((item) => Object.fromEntries(
+                        Object.entries(item).filter(([key, itemValue]) =>
+                            subKeys.has(key) && hasMeaningfulValue(itemValue)
+                        )
+                    ))
+                    .filter(hasMeaningfulValue);
+                if (items.length > 0) result[field.fieldKey] = items;
+            } else if (field.fieldType === 'block' && isRecord(value)) {
+                const blockValue = Object.fromEntries(
+                    Object.entries(value).filter(([key, itemValue]) =>
+                        subKeys.has(key) && hasMeaningfulValue(itemValue)
+                    )
+                );
+                if (hasMeaningfulValue(blockValue)) result[field.fieldKey] = blockValue;
+            }
+
+            continue;
+        }
+
+        if (hasMeaningfulValue(value)) result[field.fieldKey] = value;
+    }
+
+    return result;
+}
+
 export async function submitDynamicRegistration(payload: DynamicSubmitPayload): Promise<{ success: boolean; code?: string; error?: string }> {
     try {
-        const { registrationType, registrationLabel, applicant, formData } = payload;
+        const {
+            registrationKey = '',
+            registrationType: submittedRegistrationType,
+            registrationLabel: submittedRegistrationLabel,
+            applicant,
+        } = payload;
+        const normalizedRegistrationKey = registrationKey.trim();
+        const normalizedRegistrationType = submittedRegistrationType.trim();
+        const regTypes = await getRegistrationTypes();
+        const resolvedRegType = regTypes.find((type) =>
+            normalizedRegistrationKey
+                ? type.key === normalizedRegistrationKey && type.formType === normalizedRegistrationType
+                : type.formType === normalizedRegistrationType
+        );
+
+        if (!resolvedRegType && normalizedRegistrationKey) {
+            return { success: false, error: 'Mã form và mã loại không khớp. Vui lòng mở lại đúng link đăng ký.' };
+        }
+
+        const registrationType = resolvedRegType?.formType || normalizedRegistrationType;
+        const registrationLabel = resolvedRegType?.label || submittedRegistrationLabel.trim();
 
         const submissionId = uuidv4();
         const submissionCode = generateSubmissionCode();
@@ -39,6 +114,11 @@ export async function submitDynamicRegistration(payload: DynamicSubmitPayload): 
 
         // Build label map from form field definitions
         const sections = await getFormFields(registrationType);
+        if (sections.length === 0) {
+            return { success: false, error: 'Form này chưa có cấu hình trường. Vui lòng mở lại đúng link đăng ký.' };
+        }
+
+        const formData = sanitizeDynamicFormData(payload.formData || {}, sections);
         const labelMap: Record<string, string> = {};
         for (const sec of sections) {
             for (const f of sec.fields) {
